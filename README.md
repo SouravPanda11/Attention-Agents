@@ -57,7 +57,7 @@ $env:AGENT_BRAIN_MODE="llm_only"        # llm_only | vlm_only | hybrid
 $env:LLM_ENABLED="1"
 $env:VLM_ENABLED="0"
 $env:LLM_BASE_URL="http://127.0.0.1:1234/v1"
-$env:LLM_MODEL="qwen2.5-7b-instruct"
+$env:LLM_MODEL="<your-llm-model-id>"
 $env:LLM_API_KEY="local"
 ```
 
@@ -66,7 +66,7 @@ Optional VLM variables for `vlm_only` or `hybrid`:
 ```powershell
 $env:VLM_ENABLED="1"
 $env:VLM_BASE_URL="http://127.0.0.1:1234/v1"
-$env:VLM_MODEL="qwen2-vl-7b-instruct"
+$env:VLM_MODEL="<your-vlm-model-id>"
 $env:VLM_API_KEY="local"
 ```
 
