@@ -12,6 +12,19 @@ The project is a sandbox for evaluating agentic behavior on a controlled survey 
 - The survey app provides multi-step forms and attention checks.
 - The agent observes DOM + screenshots, plans tool actions, executes them, and records traces.
 
+## Current Status
+
+### Completed
+
+1. Survey v0 built
+2. SLM pipeline v0 built
+
+### In Progress
+
+1. VLM pipeline test
+2. Modify survey contents
+3. Implement different SLMs, LLMs, and VLMs with version history
+
 ## Prerequisites
 
 - Node.js 20+
