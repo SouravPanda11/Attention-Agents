@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { getOrCreateSessionId } from "@/lib/session";
 import { createCaptchaCode } from "@/lib/survey";
 import { getTextSurveyQuestions, textAttentionCheck } from "@/lib/surveys/textSurvey";
-import { getImageSurveyQuestions, imageAttentionCheck } from "@/lib/surveys/imageSurvey";
+import { getRandomizedImageSurvey } from "@/lib/surveys/imageSurvey";
 
 export async function GET() {
   const sid = await getOrCreateSessionId();
   const captchaCode = createCaptchaCode();
+  const randomizedImage = getRandomizedImageSurvey();
 
   const response = NextResponse.json({
     session_id: sid,
@@ -20,7 +21,7 @@ export async function GET() {
       },
     },
     image: {
-      questions: getImageSurveyQuestions(),
+      questions: randomizedImage.questions,
       captcha_insert_after: 2,
       image_attention_insert_after: 3,
       captcha: {
@@ -28,11 +29,8 @@ export async function GET() {
         label: "Type the code in captcha as shown.",
         display_code: captchaCode,
       },
-      image_attention: {
-        id: imageAttentionCheck.id,
-        label: imageAttentionCheck.label,
-        options: imageAttentionCheck.options,
-      },
+      image_attention: randomizedImage.image_attention,
+      layout_trace: randomizedImage.layout_trace,
     },
   });
 

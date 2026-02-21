@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { QuestionRenderer, type Question } from "@/app/survey/questionTypes";
 import type { TextAnswerValue } from "@/lib/surveys/types";
 
@@ -27,7 +28,7 @@ async function logEvent(eventType: string, payload: Record<string, unknown>) {
   });
 }
 
-function fieldStyle(): React.CSSProperties {
+function fieldStyle(): CSSProperties {
   return {
     width: "100%",
     padding: 10,
@@ -37,10 +38,22 @@ function fieldStyle(): React.CSSProperties {
   };
 }
 
+// Toggle required-enforcement mode by uncommenting exactly one line.
+// const ENFORCE_REQUIRED_TEXT_PAGE = true;
+const ENFORCE_REQUIRED_TEXT_PAGE = false;
+
+function isAnswered(value: TextAnswerValue): boolean {
+  if (value === undefined || value === null) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (typeof value === "number") return Number.isFinite(value);
+  return false;
+}
+
 export default function TextSurveyPage() {
   const [payload, setPayload] = useState<TextPayload | null>(null);
   const [answers, setAnswers] = useState<TextState>({});
   const [attentionValue, setAttentionValue] = useState("");
+  const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -65,6 +78,22 @@ export default function TextSurveyPage() {
   const secondHalf = payload.text.questions.slice(splitIndex);
 
   async function onNext() {
+    if (!payload) return;
+    if (ENFORCE_REQUIRED_TEXT_PAGE) {
+      const missingQuestionIds = payload.text.questions
+        .filter((q) => !isAnswered(answers[q.id]))
+        .map((q) => q.id);
+      const missingAttention = attentionValue.trim() === "";
+      if (missingQuestionIds.length > 0 || missingAttention) {
+        setValidationError("Please answer all required questions before moving to the next page.");
+        await logEvent("text_required_block", {
+          missing_question_ids: missingQuestionIds,
+          missing_attention: missingAttention,
+        });
+        return;
+      }
+    }
+    setValidationError("");
     const data = { answers, attention_value: attentionValue };
     sessionStorage.setItem("survey_text_answers", JSON.stringify(data));
     await logEvent("text_page_saved", {
@@ -111,13 +140,35 @@ export default function TextSurveyPage() {
               key={q.id}
               q={q}
               value={answers[q.id]}
-              setValue={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+              required={ENFORCE_REQUIRED_TEXT_PAGE}
+              setValue={(v) => {
+                setValidationError("");
+                setAnswers((prev) => ({ ...prev, [q.id]: v }));
+              }}
             />
           ))}
 
           <div style={{ marginBottom: 16 }}>
-            <label style={{ display: "block", fontWeight: 600, marginBottom: 6 }}>{payload.text.attention.label}</label>
-            <select style={fieldStyle()} value={attentionValue} onChange={(e) => setAttentionValue(e.target.value)}>
+            <label
+              htmlFor={payload.text.attention.id}
+              style={{ display: "block", fontWeight: 600, marginBottom: 6 }}
+            >
+              {payload.text.attention.label}
+            </label>
+            <select
+              id={payload.text.attention.id}
+              name={payload.text.attention.id}
+              data-question-id={payload.text.attention.id}
+              data-question-label={payload.text.attention.label}
+              data-question-type="choice"
+              required={ENFORCE_REQUIRED_TEXT_PAGE}
+              style={fieldStyle()}
+              value={attentionValue}
+              onChange={(e) => {
+                setValidationError("");
+                setAttentionValue(e.target.value);
+              }}
+            >
               <option value="" disabled>
                 Select...
               </option>
@@ -134,9 +185,17 @@ export default function TextSurveyPage() {
               key={q.id}
               q={q}
               value={answers[q.id]}
-              setValue={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+              required={ENFORCE_REQUIRED_TEXT_PAGE}
+              setValue={(v) => {
+                setValidationError("");
+                setAnswers((prev) => ({ ...prev, [q.id]: v }));
+              }}
             />
           ))}
+
+          {validationError ? (
+            <div style={{ margin: "0 0 12px 0", color: "#b00020", fontWeight: 600 }}>{validationError}</div>
+          ) : null}
 
           <div style={{ textAlign: "center" }}>
             <button

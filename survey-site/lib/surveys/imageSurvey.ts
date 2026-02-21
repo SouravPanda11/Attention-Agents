@@ -1,22 +1,47 @@
 import type { ImageAttentionCheck, ImageQuestion } from "@/lib/surveys/types";
 
-export function getImageSurveyQuestions(): ImageQuestion[] {
-  return [
+type ImageLayoutTraceItem = {
+  question_id: string;
+  option_order: string[];
+  correct_option_id: string;
+};
+
+type ImageAttentionLayoutTrace = {
+  question_id: string;
+  option_order: string[];
+  expected_option_id: string;
+};
+
+type RandomizedImageSurvey = {
+  questions: ImageQuestion[];
+  image_attention: ImageAttentionCheck;
+  layout_trace: {
+    questions: ImageLayoutTraceItem[];
+    image_attention: ImageAttentionLayoutTrace;
+  };
+};
+
+function maybeSwapTwo<T>(pair: [T, T]): [T, T] {
+  if (Math.random() < 0.5) return [pair[1], pair[0]];
+  return pair;
+}
+
+const IMAGE_QUESTIONS_BASE: ImageQuestion[] = [
     {
       id: "image_q1",
       label: "1) Which image is more related to basketball?",
       options: [
         {
           id: "a",
-          label: "Basketball game",
+          label: "Basketball",
           imageUrl: "/Basketball.jpg",
-          alt: "Basketball close-up",
+          alt: "Basketball",
         },
         {
           id: "b",
-          label: "Swimming race",
+          label: "Football",
           imageUrl: "/Football.jpg",
-          alt: "Swimmer in a pool",
+          alt: "Football",
         },
       ],
     },
@@ -26,15 +51,15 @@ export function getImageSurveyQuestions(): ImageQuestion[] {
       options: [
         {
           id: "a",
-          label: "Gymnastics rings",
+          label: "Gymnastics",
           imageUrl: "/Gymnastics.webp",
-          alt: "Athlete on gymnastics rings",
+          alt: "gymnastics",
         },
         {
           id: "b",
-          label: "Cycling sprint",
+          label: "Cycling",
           imageUrl: "/Cycling.jpg",
-          alt: "Track cyclist racing",
+          alt: "cycling",
         },
       ],
     },
@@ -46,13 +71,13 @@ export function getImageSurveyQuestions(): ImageQuestion[] {
           id: "a",
           label: "Badminton",
           imageUrl: "/Badminton.jpg",
-          alt: "Badminton player",
+          alt: "Badminton",
         },
         {
           id: "b",
           label: "Tennis",
           imageUrl: "/Tennis.jpg",
-          alt: "Tennis player",
+          alt: "Tennis",
         },
       ],
     },
@@ -64,18 +89,17 @@ export function getImageSurveyQuestions(): ImageQuestion[] {
           id: "a",
           label: "Rowing",
           imageUrl: "/Rowing.webp",
-          alt: "Rowing team racing",
+          alt: "Rowing",
         },
         {
           id: "b",
           label: "Boat",
           imageUrl: "/Boat.jpg",
-          alt: "Boat on water",
+          alt: "Boat",
         },
       ],
     },
   ];
-}
 
 export const imageAttentionCheck: ImageAttentionCheck = {
   id: "attention_image_mid",
@@ -84,15 +108,57 @@ export const imageAttentionCheck: ImageAttentionCheck = {
   options: [
     {
       id: "a",
-      label: "Soccer ball",
+      label: "Soccer",
       imageUrl: "/Soccer.jpg",
-      alt: "Soccer ball",
+      alt: "Soccer",
     },
     {
       id: "b",
       label: "Golf",
       imageUrl: "/golf.jpeg",
-      alt: "Golf scene",
+      alt: "Golf",
     },
   ],
 };
+
+export function getImageSurveyQuestions(): ImageQuestion[] {
+  return IMAGE_QUESTIONS_BASE;
+}
+
+export function getRandomizedImageSurvey(): RandomizedImageSurvey {
+  const randomizedQuestions: ImageQuestion[] = IMAGE_QUESTIONS_BASE.map((q) => {
+    const swapped = maybeSwapTwo([q.options[0], q.options[1]]);
+    return { ...q, options: swapped };
+  });
+
+  const randomizedAttentionOptions = maybeSwapTwo([
+    imageAttentionCheck.options[0],
+    imageAttentionCheck.options[1],
+  ]);
+  const randomizedAttention: ImageAttentionCheck = {
+    ...imageAttentionCheck,
+    options: randomizedAttentionOptions,
+  };
+
+  const layoutTraceQuestions: ImageLayoutTraceItem[] = randomizedQuestions.map((q) => ({
+    question_id: q.id,
+    option_order: q.options.map((opt) => opt.id),
+    // Survey definition convention: canonical first option is correct.
+    correct_option_id: IMAGE_QUESTIONS_BASE.find((base) => base.id === q.id)?.options[0].id ?? "",
+  }));
+
+  const attentionTrace: ImageAttentionLayoutTrace = {
+    question_id: randomizedAttention.id,
+    option_order: randomizedAttention.options.map((opt) => opt.id),
+    expected_option_id: randomizedAttention.expectedOptionId,
+  };
+
+  return {
+    questions: randomizedQuestions,
+    image_attention: randomizedAttention,
+    layout_trace: {
+      questions: layoutTraceQuestions,
+      image_attention: attentionTrace,
+    },
+  };
+}

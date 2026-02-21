@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import type { ImageQuestion } from "@/lib/surveys/types";
 
 type ImagePayload = {
@@ -19,6 +20,18 @@ type ImagePayload = {
       label: string;
       options: { id: string; label: string; imageUrl: string; alt: string }[];
     };
+    layout_trace?: {
+      questions: {
+        question_id: string;
+        option_order: string[];
+        correct_option_id: string;
+      }[];
+      image_attention: {
+        question_id: string;
+        option_order: string[];
+        expected_option_id: string;
+      };
+    };
   };
 };
 
@@ -32,20 +45,24 @@ async function logEvent(eventType: string, payload: Record<string, unknown>) {
   });
 }
 
-function cardStyle(selected: boolean): React.CSSProperties {
+function cardStyle(selected: boolean): CSSProperties {
   return {
     border: selected ? "5px solid #2c6bed" : "3px solid transparent",
     borderRadius: 10,
-    cursor: "pointer",
     overflow: "hidden",
     boxSizing: "border-box",
     boxShadow: selected ? "0 0 0 2px rgba(44,107,237,0.2)" : "none",
+    display: "block",
   };
 }
 
 function stripLeadingNumber(label: string): string {
   return label.replace(/^\d+\)\s*/, "");
 }
+
+// Toggle required-enforcement mode by uncommenting exactly one line.
+// const ENFORCE_REQUIRED_IMAGE_PAGE = true;
+const ENFORCE_REQUIRED_IMAGE_PAGE = false;
 
 export default function ImageSurveyPage() {
   const [payload, setPayload] = useState<ImagePayload | null>(null);
@@ -54,6 +71,7 @@ export default function ImageSurveyPage() {
   const [imageAttentionChoice, setImageAttentionChoice] = useState("");
   const [missingTextFlow, setMissingTextFlow] = useState(false);
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+  const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -66,7 +84,16 @@ export default function ImageSurveyPage() {
       const res = await fetch("/api/survey");
       const json = (await res.json()) as ImagePayload;
       setPayload(json);
+      if (typeof window !== "undefined") {
+        (window as any).__surveyLayoutTrace = json.image.layout_trace ?? null;
+      }
       await logEvent("image_page_view", { page: "/survey/image" });
+      if (json.image.layout_trace) {
+        await logEvent("image_layout_trace", {
+          page: "/survey/image",
+          layout_trace: json.image.layout_trace,
+        });
+      }
     })();
   }, []);
 
@@ -95,6 +122,24 @@ export default function ImageSurveyPage() {
   }
 
   async function onNext() {
+    if (!payload) return;
+    if (ENFORCE_REQUIRED_IMAGE_PAGE) {
+      const missingQuestionIds = payload.image.questions
+        .filter((q) => !answers[q.id])
+        .map((q) => q.id);
+      const missingCaptcha = captchaInput.trim() === "";
+      const missingAttention = imageAttentionChoice.trim() === "";
+      if (missingQuestionIds.length > 0 || missingCaptcha || missingAttention) {
+        setValidationError("Please complete all required items before moving to the next page.");
+        await logEvent("image_required_block", {
+          missing_question_ids: missingQuestionIds,
+          missing_captcha: missingCaptcha,
+          missing_image_attention: missingAttention,
+        });
+        return;
+      }
+    }
+    setValidationError("");
     const data = {
       answers,
       captcha_input: captchaInput,
@@ -148,45 +193,76 @@ export default function ImageSurveyPage() {
                   (questionIndex > captchaInsert ? 1 : 0) +
                   (questionIndex > imageAttentionInsert ? 1 : 0);
                 return (
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>
-                    {questionNumber}) {stripLeadingNumber(q.label)}
-                  </div>
+                  <fieldset
+                    style={{ margin: 0, padding: 0, border: "none" }}
+                    data-question-id={q.id}
+                    data-question-label={stripLeadingNumber(q.label)}
+                    data-question-type="image_choice"
+                    data-question-kind="image_choice"
+                  >
+                    <legend style={{ fontWeight: 700, marginBottom: 8 }}>
+                      {questionNumber}) {stripLeadingNumber(q.label)}
+                    </legend>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      {q.options.map((opt) => {
+                        const inputId = `${q.id}_${opt.id}`;
+                        const isSelected = answers[q.id] === opt.id;
+                        return (
+                          <label
+                            key={opt.id}
+                            htmlFor={inputId}
+                            style={cardStyle(isSelected)}
+                            data-option-id={opt.id}
+                            data-question-id={q.id}
+                          >
+                            <input
+                              id={inputId}
+                              type="radio"
+                              name={q.id}
+                              value={opt.id}
+                              required={ENFORCE_REQUIRED_IMAGE_PAGE && opt.id === q.options[0].id}
+                              checked={isSelected}
+                              onChange={() => {
+                                setValidationError("");
+                                setAnswers((prev) => ({ ...prev, [q.id]: opt.id }));
+                              }}
+                              style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 1, height: 1 }}
+                            />
+                            {brokenImages[`${q.id}_${opt.id}`] ? (
+                              <div
+                                style={{
+                                  width: "100%",
+                                  height: 200,
+                                  borderRadius: 8,
+                                  display: "grid",
+                                  placeItems: "center",
+                                  background: "#f0f0f0",
+                                  color: "#666",
+                                  fontSize: 14,
+                                }}
+                              >
+                                Image unavailable
+                              </div>
+                            ) : (
+                              <img
+                                src={opt.imageUrl}
+                                alt={opt.alt}
+                                onError={() =>
+                                  setBrokenImages((prev) => ({
+                                    ...prev,
+                                    [`${q.id}_${opt.id}`]: true,
+                                  }))
+                                }
+                                style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }}
+                              />
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
                 );
               })()}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                {q.options.map((opt) => (
-                  <div key={opt.id} style={cardStyle(answers[q.id] === opt.id)} onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: opt.id }))}>
-                    {brokenImages[`${q.id}_${opt.id}`] ? (
-                      <div
-                        style={{
-                          width: "100%",
-                          height: 200,
-                          borderRadius: 8,
-                          display: "grid",
-                          placeItems: "center",
-                          background: "#f0f0f0",
-                          color: "#666",
-                          fontSize: 14,
-                        }}
-                      >
-                        Image unavailable
-                      </div>
-                    ) : (
-                      <img
-                        src={opt.imageUrl}
-                        alt={opt.alt}
-                        onError={() =>
-                          setBrokenImages((prev) => ({
-                            ...prev,
-                            [`${q.id}_${opt.id}`]: true,
-                          }))
-                        }
-                        style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }}
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
 
               {idx + 1 === captchaInsert && (
                 <div style={{ marginTop: 16 }}>
@@ -207,8 +283,12 @@ export default function ImageSurveyPage() {
                   </div>
                   <input
                     type="text"
+                    required={ENFORCE_REQUIRED_IMAGE_PAGE}
                     value={captchaInput}
-                    onChange={(e) => setCaptchaInput(e.target.value)}
+                    onChange={(e) => {
+                      setValidationError("");
+                      setCaptchaInput(e.target.value);
+                    }}
                     placeholder="Type code exactly"
                     style={{
                       marginTop: 8,
@@ -223,50 +303,84 @@ export default function ImageSurveyPage() {
               )}
 
               {idx + 1 === imageAttentionInsert && (
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ fontWeight: 700, marginBottom: 8 }}>{imageAttentionNumber}) {payload.image.image_attention.label}</div>
+                <fieldset
+                  style={{ marginTop: 16, border: "none", padding: 0 }}
+                  data-question-id={payload.image.image_attention.id}
+                  data-question-label={payload.image.image_attention.label}
+                  data-question-type="image_attention"
+                  data-question-kind="image_attention"
+                >
+                  <legend style={{ fontWeight: 700, marginBottom: 8 }}>
+                    {imageAttentionNumber}) {payload.image.image_attention.label}
+                  </legend>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    {payload.image.image_attention.options.map((opt) => (
-                      <div
-                        key={opt.id}
-                        style={cardStyle(imageAttentionChoice === opt.id)}
-                        onClick={() => setImageAttentionChoice(opt.id)}
-                      >
-                        {brokenImages[`attention_${opt.id}`] ? (
-                          <div
-                            style={{
-                              width: "100%",
-                              height: 200,
-                              borderRadius: 8,
-                              display: "grid",
-                              placeItems: "center",
-                              background: "#f0f0f0",
-                              color: "#666",
-                              fontSize: 14,
-                            }}
-                          >
-                            Image unavailable
-                          </div>
-                        ) : (
-                          <img
-                            src={opt.imageUrl}
-                            alt={opt.alt}
-                            onError={() =>
-                              setBrokenImages((prev) => ({
-                                ...prev,
-                                [`attention_${opt.id}`]: true,
-                              }))
+                    {payload.image.image_attention.options.map((opt) => {
+                      const inputId = `${payload.image.image_attention.id}_${opt.id}`;
+                      const isSelected = imageAttentionChoice === opt.id;
+                      return (
+                        <label
+                          key={opt.id}
+                          htmlFor={inputId}
+                          style={cardStyle(isSelected)}
+                          data-option-id={opt.id}
+                          data-question-id={payload.image.image_attention.id}
+                        >
+                          <input
+                            id={inputId}
+                            type="radio"
+                            name={payload.image.image_attention.id}
+                            value={opt.id}
+                            required={
+                              ENFORCE_REQUIRED_IMAGE_PAGE &&
+                              opt.id === payload.image.image_attention.options[0].id
                             }
-                            style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }}
+                            checked={isSelected}
+                            onChange={() => {
+                              setValidationError("");
+                              setImageAttentionChoice(opt.id);
+                            }}
+                            style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 1, height: 1 }}
                           />
-                        )}
-                      </div>
-                    ))}
+                          {brokenImages[`attention_${opt.id}`] ? (
+                            <div
+                              style={{
+                                width: "100%",
+                                height: 200,
+                                borderRadius: 8,
+                                display: "grid",
+                                placeItems: "center",
+                                background: "#f0f0f0",
+                                color: "#666",
+                                fontSize: 14,
+                              }}
+                            >
+                              Image unavailable
+                            </div>
+                          ) : (
+                            <img
+                              src={opt.imageUrl}
+                              alt={opt.alt}
+                              onError={() =>
+                                setBrokenImages((prev) => ({
+                                  ...prev,
+                                  [`attention_${opt.id}`]: true,
+                                }))
+                              }
+                              style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }}
+                            />
+                          )}
+                        </label>
+                      );
+                    })}
                   </div>
-                </div>
+                </fieldset>
               )}
             </div>
           ))}
+
+          {validationError ? (
+            <div style={{ margin: "0 0 12px 0", color: "#b00020", fontWeight: 600 }}>{validationError}</div>
+          ) : null}
 
           <div style={{ textAlign: "center" }}>
             <button

@@ -1,8 +1,65 @@
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 BrainMode = Literal["llm_only", "vlm_only", "hybrid"]
+_ENV_LOADED = False
+
+
+def _load_env_file(path: Path):
+    """
+    Minimal .env loader with no third-party dependency.
+    - Supports: KEY=VALUE
+    - Ignores blank lines and comments (# ...)
+    - Supports optional leading 'export '
+    - Does not override environment variables already set by the shell.
+    """
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key:
+            continue
+        if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+            value = value[1:-1]
+        os.environ.setdefault(key, value)
+
+
+def _ensure_env_loaded():
+    global _ENV_LOADED
+    if _ENV_LOADED:
+        return
+
+    explicit = os.getenv("AGENT_ENV_FILE", "").strip()
+    if explicit:
+        env_path = Path(explicit)
+        if not env_path.is_absolute():
+            env_path = (Path.cwd() / env_path).resolve()
+        if not env_path.exists():
+            raise RuntimeError(f"AGENT_ENV_FILE points to missing file: {env_path}")
+        _load_env_file(env_path)
+        _ENV_LOADED = True
+        return
+
+    here = Path(__file__).resolve().parent
+    candidates = [
+        Path.cwd() / ".env",
+        here / ".env",
+        here / ".env.agent",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            _load_env_file(candidate)
+            break
+    _ENV_LOADED = True
 
 
 def _normalize_openai_base(url: str) -> str:
@@ -41,10 +98,12 @@ def load_model_stack() -> ModelStackConfig:
     """
     Central place to configure local/open-source LLM + VLM endpoints.
     Defaults are LM Studio-friendly. Override via env vars.
+    The loader also reads .env from the current working directory or Agent/.env.
 
     Required for OpenAI-compatible servers:
       BASE_URL should point to .../v1
     """
+    _ensure_env_loaded()
     mode = os.getenv("AGENT_BRAIN_MODE", "llm_only").strip().lower()
     if mode not in {"llm_only", "vlm_only", "hybrid"}:
         raise RuntimeError("AGENT_BRAIN_MODE must be one of: llm_only, vlm_only, hybrid")

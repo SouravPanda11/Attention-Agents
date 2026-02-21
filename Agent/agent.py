@@ -1,5 +1,7 @@
 import asyncio
+import json
 import re
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -28,6 +30,17 @@ from tools import (
 )
 
 TARGET = "http://localhost:3000/survey"
+SURVEY_VERSION = "survey_v0"
+MAX_EMPTY_PLAN_STREAK = 5
+MAX_PLAN_RETRIES = 2
+MAX_FEEDBACK_MEMORY = 3
+# Toggle DOM HTML artifact saving for debugging.
+# Screenshots and trace logs remain enabled regardless.
+SAVE_DOM_HTML_ARTIFACTS = False
+# SAVE_DOM_HTML_ARTIFACTS = True
+# Toggle live progress heartbeat in console + trace.
+# ENABLE_LIVE_PROGRESS = True
+ENABLE_LIVE_PROGRESS = False
 
 
 class AgentState(TypedDict, total=False):
@@ -35,9 +48,14 @@ class AgentState(TypedDict, total=False):
     dom_path: str
     screenshot_path: str
     parsed: Dict[str, Any]
+    action_space: Dict[str, Any]
+    action_space_path: str
     plan: List[Dict[str, Any]]
+    plan_feedback: List[str]
     step_idx: int
     max_steps: int
+    empty_plan_streak: int
+    last_exec_ts: float
     done: bool
     error: str
 
@@ -48,6 +66,34 @@ class RunCtx:
     logger: TraceLogger
     out_dir: Path
     brain: Any
+
+
+def _emit_progress(
+    ctx: "RunCtx",
+    phase: str,
+    state: AgentState,
+    extra: Dict[str, Any] | None = None,
+):
+    if not ENABLE_LIVE_PROGRESS:
+        return
+    payload: Dict[str, Any] = {
+        "phase": phase,
+        "url": str(state.get("url") or ctx.page.url),
+        "step_idx": int(state.get("step_idx", 0)),
+    }
+    last_exec_ts = state.get("last_exec_ts")
+    if isinstance(last_exec_ts, (int, float)):
+        payload["seconds_since_last_exec"] = round(max(0.0, time.monotonic() - float(last_exec_ts)), 2)
+    if extra:
+        payload.update(extra)
+    ctx.logger.log("progress", payload)
+    idle_text = ""
+    if "seconds_since_last_exec" in payload:
+        idle_text = f" idle={payload['seconds_since_last_exec']}s"
+    print(
+        f"[progress] phase={payload['phase']} step={payload['step_idx']} url={payload['url']}{idle_text}",
+        flush=True,
+    )
 
 
 def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
@@ -96,16 +142,71 @@ def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
             return f'{el.tag}[aria-label="{safe_label}"]'
         return f"xpath={root_tree.getpath(el)}"
 
+    def question_meta_for(el) -> Dict[str, str]:
+        node = el
+        best = {"id": "", "label": "", "type": ""}
+        while node is not None:
+            qid = node.get("data-question-id")
+            qlabel = node.get("data-question-label")
+            qtype = node.get("data-question-type")
+            if qid and not best["id"]:
+                best["id"] = qid.strip()
+            if qlabel:
+                best["label"] = qlabel.strip()
+            if qtype:
+                best["type"] = qtype.strip()
+            # Do not stop at nodes that only carry data-question-id (e.g. option labels).
+            # Keep climbing to capture the container-level question label/type.
+            if best["label"] or best["type"]:
+                break
+            node = node.getparent()
+        return best
+
+    def legend_for(el) -> str:
+        try:
+            fieldset_anc = el.xpath("ancestor::fieldset[1]")
+            if fieldset_anc:
+                legends = fieldset_anc[0].cssselect("legend")
+                for legend in legends:
+                    text = " ".join(legend.itertext()).strip()
+                    if text:
+                        return text
+        except Exception:
+            pass
+        return ""
+
     def label_for(el) -> str:
         element_id = el.get("id")
         if element_id:
             candidates = tree.cssselect(f'label[for="{element_id}"]')
-            if candidates:
-                return " ".join(candidates[0].itertext()).strip()
+            for cand in candidates:
+                text = " ".join(cand.itertext()).strip()
+                if text:
+                    return text
+                imgs = cand.cssselect("img")
+                if imgs:
+                    alt = (imgs[0].get("alt") or "").strip()
+                    if alt:
+                        return alt
 
         parent = el.getparent()
         if parent is not None and parent.tag == "label":
-            return " ".join(parent.itertext()).strip()
+            text = " ".join(parent.itertext()).strip()
+            if text:
+                return text
+            imgs = parent.cssselect("img")
+            if imgs:
+                alt = (imgs[0].get("alt") or "").strip()
+                if alt:
+                    return alt
+
+        legend_text = legend_for(el)
+        if legend_text:
+            return legend_text
+
+        qmeta = question_meta_for(el)
+        if qmeta.get("label"):
+            return qmeta["label"]
 
         return ""
 
@@ -127,29 +228,43 @@ def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
 
     for name, group in radios_by_name.items():
         group_selector = f'input[type="radio"][name="{name}"]'
+        group_required = any(r.get("required") is not None for r in group)
+        group_meta = question_meta_for(group[0])
+        group_label = group_meta.get("label") or label_for(group[0])
         grouped_radios[name] = {
-            "key": name,
+            "key": group_meta.get("id") or name,
             "selector": group_selector,
             "tag": "input",
             "type": "radio",
-            "label": label_for(group[0]),
+            "label": group_label,
+            "question_text": group_label,
+            "required": group_required,
             "interaction": "check",
             "options": [],
         }
-        schema["selectors"][name] = group_selector
+        schema["selectors"][grouped_radios[name]["key"]] = group_selector
 
         for idx, el in enumerate(group):
             element_id = el.get("id")
+            option_selector = f'input[type="radio"][name="{name}"] >> nth={idx}'
+            option_alt = ""
             if element_id:
-                option_selector = f"#{element_id}"
-            else:
-                option_selector = f'input[type="radio"][name="{name}"] >> nth={idx}'
+                label_candidates = tree.cssselect(f'label[for="{element_id}"]')
+                if label_candidates:
+                    option_selector = f'label[for="{element_id}"]'
+                    imgs = label_candidates[0].cssselect("img")
+                    if imgs:
+                        option_alt = (imgs[0].get("alt") or "").strip()
+                else:
+                    option_selector = f"#{element_id}"
 
             grouped_radios[name]["options"].append(
                 {
                     "id": element_id,
                     "value": el.get("value") or "on",
                     "label": label_for(el),
+                    "alt": option_alt,
+                    "question_text": group_label,
                     "selector": option_selector,
                 }
             )
@@ -165,7 +280,8 @@ def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
         if not selector:
             continue
 
-        key = el.get("id") or el.get("name") or f"field_{field_index}"
+        qmeta = question_meta_for(el)
+        key = qmeta.get("id") or el.get("id") or el.get("name") or f"field_{field_index}"
         field_index += 1
         schema["selectors"][key] = selector
 
@@ -189,7 +305,8 @@ def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
             "name": el.get("name"),
             "id": el.get("id"),
             "required": bool(el.get("required") is not None),
-            "label": label_for(el),
+            "label": qmeta.get("label") or label_for(el),
+            "question_text": qmeta.get("label") or "",
             "placeholder": el.get("placeholder"),
             "text": " ".join(el.itertext()).strip() if el.tag == "button" else "",
             "interaction": interaction,
@@ -255,43 +372,49 @@ def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
             return " ".join(prev_nodes[-1].itertext()).strip()
         return ""
 
-    # Parse likely image answer options on /survey/image
-    image_option_idx = 0
-    for el in tree.cssselect("div, figure, a, button, label, img, [role='button'], div[role], div[onclick]"):
-        img = el if el.tag == "img" else (el.cssselect("img")[0] if el.cssselect("img") else None)
-        if img is None:
-            continue
+    has_structured_image_checks = any(
+        isinstance(name, str) and (name.startswith("image_") or name.startswith("attention_image"))
+        for name in radios_by_name.keys()
+    )
 
-        style_text = (el.get("style") or "").lower()
-        has_pointer = "cursor: pointer" in style_text or "cursor:pointer" in style_text
-        has_hint_attr = bool(el.get("data-testid") or el.get("aria-label") or el.get("id"))
-        if not (has_pointer or has_hint_attr or el.tag == "img"):
-            continue
+    # Parse likely image answer options on /survey/image only when structured radio groups are absent.
+    if not has_structured_image_checks:
+        image_option_idx = 0
+        for el in tree.cssselect("div, figure, a, button, label, img, [role='button'], div[role], div[onclick]"):
+            img = el if el.tag == "img" else (el.cssselect("img")[0] if el.cssselect("img") else None)
+            if img is None:
+                continue
 
-        clickable = el if el.tag != "img" else (el.getparent() if el.getparent() is not None else el)
-        selector = selector_for_any(clickable)
-        key = f"image_option_{image_option_idx}"
-        image_option_idx += 1
+            style_text = (el.get("style") or "").lower()
+            has_pointer = "cursor: pointer" in style_text or "cursor:pointer" in style_text
+            has_hint_attr = bool(el.get("data-testid") or el.get("aria-label") or el.get("id"))
+            if not (has_pointer or has_hint_attr or el.tag == "img"):
+                continue
 
-        src = img.get("src")
-        alt = img.get("alt") or ""
-        qtext = question_text_for(clickable)
+            clickable = el if el.tag != "img" else (el.getparent() if el.getparent() is not None else el)
+            selector = selector_for_any(clickable)
+            key = f"image_option_{image_option_idx}"
+            image_option_idx += 1
 
-        field = {
-            "key": key,
-            "selector": selector,
-            "tag": clickable.tag,
-            "interaction": "click",
-            "kind": "image_option",
-            "question_text": qtext,
-            "alt": alt,
-            "src": src,
-            "name": clickable.get("name"),
-            "id": clickable.get("id"),
-            "required": False,
-        }
-        schema["fields"].append(field)
-        schema["selectors"][key] = selector
+            src = img.get("src")
+            alt = img.get("alt") or ""
+            qtext = question_text_for(clickable)
+
+            field = {
+                "key": key,
+                "selector": selector,
+                "tag": clickable.tag,
+                "interaction": "click",
+                "kind": "image_option",
+                "question_text": qtext,
+                "alt": alt,
+                "src": src,
+                "name": clickable.get("name"),
+                "id": clickable.get("id"),
+                "required": False,
+            }
+            schema["fields"].append(field)
+            schema["selectors"][key] = selector
 
     # Detect captcha code text near captcha input.
     captcha_inputs = tree.xpath(
@@ -327,6 +450,240 @@ def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
     return schema
 
 
+def build_action_space(schema: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Build the validator-first action gate from parsed DOM schema.
+    This is the per-page valid action set given to the planner.
+    """
+    action_fields: List[Dict[str, Any]] = []
+    seen_keys = set()
+    source_fields = schema.get("fields") or []
+    captcha_info = schema.get("captcha") if isinstance(schema.get("captcha"), dict) else None
+    captcha_input_selector = ""
+    captcha_code_text = ""
+    if captcha_info:
+        captcha_input_selector = str(captcha_info.get("input_selector") or "")
+        captcha_code_text = str(captcha_info.get("code_text") or "")
+
+    for f in source_fields:
+        if not isinstance(f, dict):
+            continue
+        key = f.get("key")
+        interaction = f.get("interaction")
+        selector = f.get("selector")
+        if (
+            not isinstance(key, str)
+            or not key
+            or not isinstance(interaction, str)
+            or interaction not in {"fill", "select", "check", "set_range", "click"}
+            or not isinstance(selector, str)
+            or not selector
+        ):
+            continue
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+
+        action_field: Dict[str, Any] = {
+            "key": key,
+            "interaction": interaction,
+            "selector": selector,
+            "label": f.get("label") or "",
+            "required": bool(f.get("required") is True),
+        }
+        if interaction == "check":
+            action_field["label"] = "check"
+        action_field["tool_hint"] = interaction
+
+        if f.get("kind"):
+            action_field["kind"] = f.get("kind")
+        if f.get("question_text"):
+            action_field["question_text"] = f.get("question_text")
+        if f.get("alt"):
+            action_field["alt"] = f.get("alt")
+        if f.get("text"):
+            action_field["text"] = f.get("text")
+
+        if interaction in {"select", "check"}:
+            options = []
+            for opt in (f.get("options") or []):
+                if not isinstance(opt, dict):
+                    continue
+                opt_item = {
+                    "value": opt.get("value", ""),
+                    "label": opt.get("label", "") or opt.get("alt", ""),
+                }
+                if interaction == "check":
+                    opt_sel = opt.get("selector")
+                    if isinstance(opt_sel, str) and opt_sel:
+                        opt_item["selector"] = opt_sel
+                    if opt.get("alt"):
+                        opt_item["alt"] = opt.get("alt")
+                    if opt.get("question_text"):
+                        opt_item["question_text"] = opt.get("question_text")
+                options.append(opt_item)
+            action_field["options"] = options
+
+        if interaction == "fill":
+            input_type = str(f.get("inputType") or f.get("type") or "").lower()
+            if input_type:
+                action_field["input_type"] = input_type
+            if f.get("min") is not None:
+                action_field["min"] = f.get("min")
+            if f.get("max") is not None:
+                action_field["max"] = f.get("max")
+            if f.get("step") is not None:
+                action_field["step"] = f.get("step")
+            if captcha_input_selector and selector == captcha_input_selector:
+                action_field["kind"] = "captcha_input"
+                if captcha_code_text:
+                    action_field["expected_value"] = captcha_code_text
+
+        if interaction == "set_range":
+            if f.get("min") is not None:
+                action_field["min"] = f.get("min")
+            if f.get("max") is not None:
+                action_field["max"] = f.get("max")
+            if f.get("step") is not None:
+                action_field["step"] = f.get("step")
+
+        action_fields.append(action_field)
+
+    selectors_map = schema.get("selectors") or {}
+    for nav_key in ("next", "submit"):
+        nav_selector = selectors_map.get(nav_key)
+        if (
+            isinstance(nav_selector, str)
+            and nav_selector
+            and nav_key not in seen_keys
+        ):
+            action_fields.append(
+                {
+                    "key": nav_key,
+                    "interaction": "click",
+                    "selector": nav_selector,
+                    "label": nav_key,
+                    "kind": "navigation_control",
+                    "required": False,
+                }
+            )
+            seen_keys.add(nav_key)
+
+    for shape in (schema.get("shapes") or []):
+        if not isinstance(shape, dict):
+            continue
+        shape_id = shape.get("id")
+        if not isinstance(shape_id, str) or not shape_id:
+            continue
+        key = f"shape_{shape_id}"
+        if key in seen_keys:
+            continue
+        action_fields.append(
+            {
+                "key": key,
+                "interaction": "click",
+                "selector": f'[data-shape-id="{shape_id}"]',
+                "label": shape.get("kind") or "shape",
+                "kind": "shape_option",
+                "required": False,
+            }
+        )
+        seen_keys.add(key)
+
+    answerable_interactions = {"fill", "select", "check", "set_range"}
+    required_answer_keys: List[str] = []
+    interaction_counts: Dict[str, int] = {}
+    required_count = 0
+    answerable_count = 0
+    navigation_count = 0
+    for f in action_fields:
+        interaction = str(f.get("interaction") or "")
+        if interaction:
+            interaction_counts[interaction] = interaction_counts.get(interaction, 0) + 1
+        is_answerable = interaction in answerable_interactions
+        is_required = bool(f.get("required") is True)
+        if interaction == "click":
+            navigation_count += 1
+        if is_answerable:
+            answerable_count += 1
+            if is_required:
+                required_count += 1
+                key = f.get("key")
+                if isinstance(key, str) and key:
+                    required_answer_keys.append(key)
+
+    return {
+        "fields": action_fields,
+        "meta": {
+            "total_fields": len(action_fields),
+            "answerable_count": answerable_count,
+            "required_answerable_count": required_count,
+            "navigation_count": navigation_count,
+            "interaction_counts": interaction_counts,
+            "required_answer_keys": required_answer_keys,
+            "has_captcha": bool(captcha_info),
+            "captcha": captcha_info if captcha_info else None,
+        },
+    }
+
+
+def _build_image_option_map(action_space: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Build a compact per-step artifact for image-question auditing.
+    The options array preserves DOM order (left->right in current UI grid).
+    """
+    result_items: List[Dict[str, Any]] = []
+    for f in (action_space.get("fields") or []):
+        if not isinstance(f, dict):
+            continue
+        if str(f.get("interaction") or "") != "check":
+            continue
+        key = str(f.get("key") or "")
+        if not key.startswith("image_") and not key.startswith("attention_image"):
+            continue
+        opts_out: List[Dict[str, Any]] = []
+        for idx, opt in enumerate(f.get("options") or []):
+            if not isinstance(opt, dict):
+                continue
+            opts_out.append(
+                {
+                    "dom_order": idx,
+                    "value": opt.get("value"),
+                    "label": opt.get("label"),
+                    "alt": opt.get("alt"),
+                    "selector": opt.get("selector"),
+                }
+            )
+        result_items.append(
+            {
+                "key": key,
+                "question_text": str(f.get("question_text") or f.get("label") or ""),
+                "options": opts_out,
+            }
+        )
+    return {"image_items": result_items}
+
+
+async def _read_ui_layout_trace(page: Any) -> Dict[str, Any]:
+    try:
+        value = await page.evaluate(
+            """() => {
+                try {
+                    const t = window.__surveyLayoutTrace;
+                    if (!t || typeof t !== "object") return null;
+                    return t;
+                } catch (_) {
+                    return null;
+                }
+            }"""
+        )
+        if isinstance(value, dict):
+            return value
+        return {}
+    except Exception:
+        return {}
+
+
 async def _is_checkable_selector(page: Any, selector: str) -> bool:
     try:
         return bool(
@@ -345,11 +702,27 @@ async def _log_page_marker(page: Any, logger: TraceLogger, step_idx: int, stage:
             """() => {
                 const title = document.title || "";
                 const h = document.querySelector("h1, h2");
-                return { title, heading: h ? (h.textContent || "").trim() : "" };
+                let hasTextAnswers = null;
+                let hasImageAnswers = null;
+                try {
+                    hasTextAnswers = Boolean(sessionStorage.getItem("survey_text_answers"));
+                    hasImageAnswers = Boolean(sessionStorage.getItem("survey_image_answers"));
+                } catch (_) {}
+                return {
+                    title,
+                    heading: h ? (h.textContent || "").trim() : "",
+                    has_text_answers_store: hasTextAnswers,
+                    has_image_answers_store: hasImageAnswers
+                };
             }"""
         )
     except Exception:
-        marker = {"title": "", "heading": ""}
+        marker = {
+            "title": "",
+            "heading": "",
+            "has_text_answers_store": None,
+            "has_image_answers_store": None,
+        }
     logger.log(
         "page_marker",
         {
@@ -358,154 +731,10 @@ async def _log_page_marker(page: Any, logger: TraceLogger, step_idx: int, stage:
             "url": page.url,
             "title": marker.get("title", ""),
             "heading": marker.get("heading", ""),
+            "has_text_answers_store": marker.get("has_text_answers_store"),
+            "has_image_answers_store": marker.get("has_image_answers_store"),
         },
     )
-
-
-def _normalize_question_key(text: str) -> str:
-    return re.sub(r"\s+", " ", (text or "").strip()).lower()
-
-
-def _question_sort_key(text: str) -> tuple:
-    m = re.match(r"^(\d+)\)", (text or "").strip())
-    return (int(m.group(1)) if m else 10_000, text or "")
-
-
-def _enforce_plan_guardrails(plan: List[Dict[str, Any]], schema: Dict[str, Any], current_url: str) -> List[Dict[str, Any]]:
-    fields = schema.get("fields", [])
-    selectors = schema.get("selectors", {})
-    field_by_selector = {
-        f.get("selector"): f
-        for f in fields
-        if isinstance(f, dict) and isinstance(f.get("selector"), str)
-    }
-
-    # Deterministic image-page plan: one click per question + captcha + next.
-    if "/survey/image" in current_url:
-        image_fields = [
-            f for f in fields if f.get("interaction") == "click" and f.get("kind") == "image_option" and f.get("selector")
-        ]
-        grouped: Dict[str, List[Dict[str, Any]]] = {}
-        for f in image_fields:
-            q = _normalize_question_key(f.get("question_text") or f.get("alt") or "")
-            grouped.setdefault(q, []).append(f)
-
-        deterministic: List[Dict[str, Any]] = []
-        ordered_groups = sorted(grouped.items(), key=lambda kv: _question_sort_key(kv[1][0].get("question_text", "")))
-        for _, options in ordered_groups:
-            options_sorted = sorted(options, key=lambda o: (o.get("selector") or ""))
-            deterministic.append({"tool": "click", "selector": options_sorted[0]["selector"]})
-
-        captcha = schema.get("captcha") or {}
-        code = captcha.get("code_text")
-        cap_selector = captcha.get("input_selector")
-        if code and cap_selector:
-            deterministic.append({"tool": "fill", "selector": cap_selector, "value": code})
-
-        next_selector = selectors.get("next") or selectors.get("submit") or 'button:has-text("Next")'
-        deterministic.append({"tool": "click", "selector": next_selector})
-        return deterministic
-
-    fixed: List[Dict[str, Any]] = []
-    for step in plan:
-        if not isinstance(step, dict):
-            continue
-        tool = step.get("tool")
-        if tool == "check":
-            selector = str(step.get("selector", ""))
-            # Avoid default-first radio option where nth selectors are used.
-            if ">> nth=0" in selector:
-                alt_selector = selector.replace(">> nth=0", ">> nth=1")
-                fixed.append({**step, "selector": alt_selector})
-            else:
-                fixed.append(step)
-            continue
-
-        if tool == "set_range":
-            selector = step.get("selector")
-            field = field_by_selector.get(selector, {})
-            min_v = field.get("min")
-            max_v = field.get("max")
-            if min_v is not None and max_v is not None:
-                mid = int((float(min_v) + float(max_v)) / 2)
-                fixed.append({**step, "value": mid})
-            else:
-                fixed.append(step)
-            continue
-
-        if tool != "fill":
-            fixed.append(step)
-            continue
-
-        selector = step.get("selector")
-        field = field_by_selector.get(selector, {})
-        placeholder = (field.get("placeholder") or "").strip().lower()
-        input_type = (field.get("inputType") or field.get("type") or "").lower()
-        value = str(step.get("value", ""))
-
-        if placeholder and value.strip().lower() == placeholder:
-            if input_type == "number":
-                min_v = field.get("min")
-                max_v = field.get("max")
-                if min_v is not None and max_v is not None:
-                    value = str(int((float(min_v) + float(max_v)) / 2))
-                elif min_v is not None:
-                    value = str(int(float(min_v)))
-                else:
-                    value = "25"
-            else:
-                value = "Test response"
-            fixed.append({**step, "value": value})
-        else:
-            fixed.append(step)
-
-    if fixed:
-        return fixed
-
-    # Deterministic fallback from schema when model output is empty/invalid.
-    baseline: List[Dict[str, Any]] = []
-    for field in fields:
-        interaction = field.get("interaction")
-        selector = field.get("selector")
-        if not selector:
-            continue
-
-        if interaction == "fill":
-            input_type = (field.get("inputType") or field.get("type") or "").lower()
-            if input_type == "number":
-                min_v = field.get("min")
-                max_v = field.get("max")
-                if min_v is not None and max_v is not None:
-                    val = str(int((float(min_v) + float(max_v)) / 2))
-                elif min_v is not None:
-                    val = str(int(float(min_v)))
-                else:
-                    val = "25"
-            else:
-                val = "Test response"
-            baseline.append({"tool": "fill", "selector": selector, "value": val})
-        elif interaction == "select":
-            options = field.get("options") or []
-            valid = [o for o in options if o.get("value") and "select" not in (o.get("label") or "").strip().lower()]
-            if valid:
-                baseline.append({"tool": "select", "selector": selector, "value": valid[0]["value"]})
-        elif interaction == "set_range":
-            min_v = field.get("min")
-            max_v = field.get("max")
-            val = int((float(min_v) + float(max_v)) / 2) if min_v is not None and max_v is not None else 50
-            baseline.append({"tool": "set_range", "selector": selector, "value": val})
-        elif interaction == "check":
-            options = field.get("options") or []
-            if options:
-                chosen = options[1] if len(options) > 1 else options[0]
-                if chosen.get("selector"):
-                    baseline.append({"tool": "check", "selector": chosen["selector"]})
-
-    next_selector = selectors.get("next") or selectors.get("submit")
-    if next_selector:
-        baseline.append({"tool": "click", "selector": next_selector})
-
-    return baseline
 
 
 def _get_ctx(config) -> "RunCtx":
@@ -517,13 +746,40 @@ def _get_ctx(config) -> "RunCtx":
     return ctx
 
 
+def _detect_required_tag() -> str:
+    """
+    Infer required-enforcement mode from survey-site page toggles.
+    Returns:
+    - "RT" if both text+image toggles are true
+    - "NRT" otherwise
+    """
+    root = Path(__file__).resolve().parent.parent
+    text_page = root / "survey-site" / "app" / "survey" / "text" / "page.tsx"
+    image_page = root / "survey-site" / "app" / "survey" / "image" / "page.tsx"
+    pattern = re.compile(r"^\s*const\s+ENFORCE_REQUIRED_[A-Z_]+\s*=\s*(true|false)\s*;", re.MULTILINE)
+
+    def _is_required_true(path: Path) -> bool:
+        try:
+            content = path.read_text(encoding="utf-8")
+        except Exception:
+            return False
+        match = pattern.search(content)
+        if not match:
+            return False
+        return match.group(1).lower() == "true"
+
+    return "RT" if _is_required_true(text_page) and _is_required_true(image_page) else "NRT"
+
+
 async def node_observe(state: AgentState, config) -> AgentState:
     ctx = _get_ctx(config)
     if state.get("done"):
         return state
+    _emit_progress(ctx, "observe:start", state)
 
     step_idx = int(state.get("step_idx", 0)) + 1
     max_steps = int(state.get("max_steps", 50))
+    prior_url = str(state.get("url", ""))
     current_url = ctx.page.url
 
     if "/survey/done" not in current_url and "/survey/thank-you" not in current_url:
@@ -539,19 +795,89 @@ async def node_observe(state: AgentState, config) -> AgentState:
         )
 
     # 3) Now take evidence
-    dom_path = ctx.out_dir / f"dom_{step_idx}.html"
     shot_path = ctx.out_dir / f"shot_{step_idx}.png"
-    await tool_dom_snapshot(ctx.page, ctx.logger, dom_path)
+    dom_path = ctx.out_dir / f"dom_{step_idx}.html"
+    dom_html = await ctx.page.content()
+    if SAVE_DOM_HTML_ARTIFACTS:
+        dom_path.write_text(dom_html, encoding="utf-8")
+        ctx.logger.log("dom_snapshot", {"path": str(dom_path)})
+    else:
+        dom_path = Path("")
     await tool_screenshot(ctx.page, ctx.logger, shot_path)
     await _log_page_marker(ctx.page, ctx.logger, step_idx, "observe")
 
-    dom_html = dom_path.read_text(encoding="utf-8")
     parsed = parse_survey_dom(dom_html)
+    action_space = build_action_space(parsed)
+    action_space_path = ctx.out_dir / f"action_space_{step_idx}.json"
+    action_space_path.write_text(json.dumps(action_space, indent=2), encoding="utf-8")
+    image_option_map = _build_image_option_map(action_space)
+    if image_option_map.get("image_items"):
+        image_option_map_path = ctx.out_dir / f"image_option_map_{step_idx}.json"
+        image_option_map_path.write_text(json.dumps(image_option_map, indent=2), encoding="utf-8")
+        ctx.logger.log(
+            "image_option_map",
+            {
+                "step_idx": step_idx,
+                "path": str(image_option_map_path),
+                "item_count": len(image_option_map.get("image_items") or []),
+            },
+        )
+    if "/survey/image" in current_url:
+        ui_layout_trace = await _read_ui_layout_trace(ctx.page)
+        if ui_layout_trace:
+            ui_layout_trace_path = ctx.out_dir / f"ui_layout_trace_{step_idx}.json"
+            ui_layout_trace_path.write_text(json.dumps(ui_layout_trace, indent=2), encoding="utf-8")
+            # Keep a stable latest path for run-level evaluators.
+            (ctx.out_dir / "ui_layout_trace.json").write_text(json.dumps(ui_layout_trace, indent=2), encoding="utf-8")
+            ctx.logger.log(
+                "ui_layout_trace",
+                {
+                    "step_idx": step_idx,
+                    "path": str(ui_layout_trace_path),
+                    "question_count": len((ui_layout_trace.get("questions") or [])),
+                },
+            )
+    interaction_counts: Dict[str, int] = {}
+    for f in (action_space.get("fields") or []):
+        interaction = str(f.get("interaction") or "")
+        if not interaction:
+            continue
+        interaction_counts[interaction] = interaction_counts.get(interaction, 0) + 1
+    ctx.logger.log(
+        "action_space",
+        {
+            "step_idx": step_idx,
+            "path": str(action_space_path),
+            "field_count": len(action_space.get("fields") or []),
+            "interaction_counts": interaction_counts,
+        },
+    )
     current_url = ctx.page.url
+    url_changed = bool(prior_url and prior_url != current_url)
+    if url_changed:
+        ctx.logger.log(
+            "page_changed",
+            {
+                "old_url": prior_url,
+                "new_url": current_url,
+                "reset_plan_feedback": True,
+            },
+        )
     ctx.logger.log("observe_state", {"step_idx": step_idx, "url": current_url})
+    _emit_progress(
+        ctx,
+        "observe:end",
+        state,
+        {
+            "observed_step_idx": step_idx,
+            "action_space_fields": len(action_space.get("fields") or []),
+        },
+    )
 
     done = bool(state.get("done", False))
     error = state.get("error")
+    plan_feedback = [] if url_changed else list(state.get("plan_feedback") or [])
+    empty_plan_streak = 0 if url_changed else int(state.get("empty_plan_streak", 0))
     if step_idx >= max_steps:
         done = True
         error = "max_steps_exceeded"
@@ -560,32 +886,125 @@ async def node_observe(state: AgentState, config) -> AgentState:
         **state,
         "url": current_url,
         "parsed": parsed,
-        "dom_path": str(dom_path),
+        "action_space": action_space,
+        "action_space_path": str(action_space_path),
+        "dom_path": str(dom_path) if str(dom_path) else "",
         "screenshot_path": str(shot_path),
         "step_idx": step_idx,
         "max_steps": max_steps,
+        "plan_feedback": plan_feedback,
+        "empty_plan_streak": empty_plan_streak,
         "done": done,
         "error": error,
     }
 
 async def node_plan(state: AgentState, config) -> AgentState:
     ctx = _get_ctx(config)
+    _emit_progress(ctx, "plan:start", state)
 
     schema = state.get("parsed") or {}
+    action_space = state.get("action_space") or {}
+    ctx.logger.log(
+        "plan_input",
+        {
+            "step_idx": state.get("step_idx", 0),
+            "action_space_path": state.get("action_space_path", ""),
+            "action_space_field_count": len(action_space.get("fields") or []),
+        },
+    )
     screenshot_path = state.get("screenshot_path")
-    try:
-        plan = await ctx.brain.plan(schema, Path(screenshot_path) if screenshot_path else None)
-    except Exception as exc:
-        ctx.logger.log("plan_fallback", {"error": str(exc)})
+    feedback = list(state.get("plan_feedback") or [])
+    feedback = feedback[-MAX_FEEDBACK_MEMORY:]
+    if feedback:
+        ctx.logger.log("plan_feedback_used", {"count": len(feedback), "feedback": feedback})
+
+    plan: List[Dict[str, Any]] = []
+    last_error = ""
+    for attempt in range(MAX_PLAN_RETRIES + 1):
+        attempt_feedback = feedback[-MAX_FEEDBACK_MEMORY:]
+        attempt_started = time.monotonic()
+        _emit_progress(
+            ctx,
+            "plan:attempt",
+            state,
+            {
+                "attempt": attempt + 1,
+                "max_attempts": MAX_PLAN_RETRIES + 1,
+                "feedback_count": len(attempt_feedback),
+            },
+        )
+        try:
+            plan = await ctx.brain.plan(
+                schema=schema,
+                action_space=action_space,
+                screenshot_path=Path(screenshot_path) if screenshot_path else None,
+                validation_feedback=attempt_feedback,
+            )
+            if attempt > 0:
+                ctx.logger.log("plan_recovered", {"attempt": attempt + 1, "plan_size": len(plan)})
+            _emit_progress(
+                ctx,
+                "plan:success",
+                state,
+                {
+                    "attempt": attempt + 1,
+                    "plan_size": len(plan),
+                    "elapsed_s": round(time.monotonic() - attempt_started, 2),
+                },
+            )
+            break
+        except Exception as exc:
+            last_error = str(exc)
+            ctx.logger.log("plan_reject", {"attempt": attempt + 1, "error": last_error})
+            _emit_progress(
+                ctx,
+                "plan:reject",
+                state,
+                {
+                    "attempt": attempt + 1,
+                    "elapsed_s": round(time.monotonic() - attempt_started, 2),
+                    "error": last_error[:200],
+                },
+            )
+            feedback.append(last_error)
+            feedback = feedback[-MAX_FEEDBACK_MEMORY:]
+    else:
+        ctx.logger.log("plan_fallback", {"error": last_error or "unknown_planning_error"})
         plan = []
-    plan = _enforce_plan_guardrails(plan, schema, state.get("url") or "")
+
+    empty_plan_streak = int(state.get("empty_plan_streak", 0))
+    if plan:
+        empty_plan_streak = 0
+        feedback = []
+    else:
+        empty_plan_streak += 1
+    if empty_plan_streak >= MAX_EMPTY_PLAN_STREAK:
+        ctx.logger.log(
+            "plan_stalled",
+            {
+                "empty_plan_streak": empty_plan_streak,
+                "max_empty_plan_streak": MAX_EMPTY_PLAN_STREAK,
+                "url": state.get("url", ""),
+            },
+        )
+        ctx.logger.log("plan", {"steps": plan})
+        return {
+            **state,
+            "plan": plan,
+            "plan_feedback": feedback,
+            "empty_plan_streak": empty_plan_streak,
+            "done": True,
+            "error": "empty_plan_streak_exceeded",
+        }
 
     ctx.logger.log("plan", {"steps": plan})
-    return {**state, "plan": plan}
+    _emit_progress(ctx, "plan:end", state, {"plan_size": len(plan)})
+    return {**state, "plan": plan, "plan_feedback": feedback, "empty_plan_streak": empty_plan_streak}
 
 
 async def node_act(state: AgentState, config) -> AgentState:
     ctx = _get_ctx(config)
+    _emit_progress(ctx, "act:start", state, {"plan_size": len(state.get("plan") or [])})
     current_url = ctx.page.url
     if "/survey/done" in current_url or "/survey/thank-you" in current_url:
         return {**state, "done": True, "url": current_url}
@@ -599,6 +1018,21 @@ async def node_act(state: AgentState, config) -> AgentState:
         for f in fields
         if isinstance(f, dict) and isinstance(f.get("selector"), str)
     }
+    check_option_by_selector: Dict[str, Dict[str, Any]] = {}
+    for f in fields:
+        if not isinstance(f, dict) or f.get("interaction") != "check":
+            continue
+        for opt in (f.get("options") or []):
+            opt_selector = opt.get("selector")
+            if not isinstance(opt_selector, str) or not opt_selector:
+                continue
+            check_option_by_selector[opt_selector] = {
+                "parent_key": f.get("key"),
+                "parent_label": f.get("label"),
+                "option_label": opt.get("label"),
+                "option_value": opt.get("value"),
+                "field_kind": f.get("kind"),
+            }
 
     actionable_fields = [
         f for f in fields if f.get("interaction") in {"fill", "select", "check", "set_range"}
@@ -608,6 +1042,12 @@ async def node_act(state: AgentState, config) -> AgentState:
         return {**state, "done": True, "url": current_url}
 
     for i, step in enumerate(plan):
+        _emit_progress(
+            ctx,
+            "act:step:start",
+            state,
+            {"plan_index": i + 1, "plan_size": len(plan), "tool": step.get("tool")},
+        )
         tool = step.get("tool")
         if tool == "done":
             return {**state, "done": True, "url": ctx.page.url}
@@ -625,6 +1065,8 @@ async def node_act(state: AgentState, config) -> AgentState:
         if not selector:
             raise RuntimeError(f"Step {i} missing valid selector/key: {step}")
 
+        step_field = field_by_selector.get(selector, {}) or {}
+        option_meta = check_option_by_selector.get(selector, {}) or {}
         ctx.logger.log(
             "exec_step",
             {
@@ -632,6 +1074,14 @@ async def node_act(state: AgentState, config) -> AgentState:
                 "tool": tool,
                 "selector": selector,
                 "value": value,
+                "field_key": step_field.get("key") or option_meta.get("parent_key"),
+                "field_label": step_field.get("label") or option_meta.get("parent_label"),
+                "field_interaction": step_field.get("interaction") or ("check" if option_meta else None),
+                "field_kind": step_field.get("kind") or option_meta.get("field_kind"),
+                "question_text": step_field.get("question_text"),
+                "alt": step_field.get("alt"),
+                "option_label": option_meta.get("option_label"),
+                "option_value": option_meta.get("option_value"),
             },
         )
 
@@ -686,7 +1136,10 @@ async def node_act(state: AgentState, config) -> AgentState:
 
                     blocked_dom = ctx.out_dir / f"dom_validation_blocked_{i+1}.html"
                     blocked_shot = ctx.out_dir / f"shot_validation_blocked_{i+1}.png"
-                    await tool_dom_snapshot(ctx.page, ctx.logger, blocked_dom)
+                    if SAVE_DOM_HTML_ARTIFACTS:
+                        blocked_dom_html = await ctx.page.content()
+                        blocked_dom.write_text(blocked_dom_html, encoding="utf-8")
+                        ctx.logger.log("dom_snapshot", {"path": str(blocked_dom)})
                     await tool_screenshot(ctx.page, ctx.logger, blocked_shot)
                     ctx.logger.log(
                         "validation_blocked",
@@ -706,10 +1159,14 @@ async def node_act(state: AgentState, config) -> AgentState:
                             "new_url": ctx.page.url,
                         },
                     )
-                await tool_dom_snapshot(ctx.page, ctx.logger, ctx.out_dir / f"dom_{state.get('step_idx', 0)}_act_{i+1}.html")
+                if SAVE_DOM_HTML_ARTIFACTS:
+                    act_dom = ctx.out_dir / f"dom_{state.get('step_idx', 0)}_act_{i+1}.html"
+                    act_dom_html = await ctx.page.content()
+                    act_dom.write_text(act_dom_html, encoding="utf-8")
+                    ctx.logger.log("dom_snapshot", {"path": str(act_dom)})
                 await tool_screenshot(ctx.page, ctx.logger, ctx.out_dir / f"shot_{state.get('step_idx', 0)}_act_{i+1}.png")
                 await _log_page_marker(ctx.page, ctx.logger, int(state.get("step_idx", 0)), f"act_{i+1}")
-                return {**state, "url": ctx.page.url}
+                return {**state, "url": ctx.page.url, "last_exec_ts": time.monotonic()}
 
         elif tool == "check":
             await tool_check(ctx.page, ctx.logger, selector)
@@ -729,8 +1186,20 @@ async def node_act(state: AgentState, config) -> AgentState:
         else:
             raise RuntimeError(f"Unknown tool at step {i}: {tool}")
 
+        state = {**state, "last_exec_ts": time.monotonic()}
+        _emit_progress(
+            ctx,
+            "act:step:end",
+            state,
+            {"plan_index": i + 1, "plan_size": len(plan), "tool": tool},
+        )
+
         # evidence after each step
-        await tool_dom_snapshot(ctx.page, ctx.logger, ctx.out_dir / f"dom_{state.get('step_idx', 0)}_act_{i+1}.html")
+        if SAVE_DOM_HTML_ARTIFACTS:
+            act_dom = ctx.out_dir / f"dom_{state.get('step_idx', 0)}_act_{i+1}.html"
+            act_dom_html = await ctx.page.content()
+            act_dom.write_text(act_dom_html, encoding="utf-8")
+            ctx.logger.log("dom_snapshot", {"path": str(act_dom)})
         await tool_screenshot(ctx.page, ctx.logger, ctx.out_dir / f"shot_{state.get('step_idx', 0)}_act_{i+1}.png")
         await _log_page_marker(ctx.page, ctx.logger, int(state.get("step_idx", 0)), f"act_{i+1}")
 
@@ -762,14 +1231,19 @@ def _build_brain() -> LLMVLMBasedBrain:
     return LLMVLMBasedBrain(config=stack)
 
 
-async def main(headless: bool = False):
-    run_base = f"run_{datetime.now().strftime('%H%M')}"
-    out_dir = Path("runs") / run_base
+async def main(headless: bool = False) -> Path:
+    brain = _build_brain()
+    prompt_behavior_mode = getattr(brain, "prompt_behavior_mode", "unknown")
+    required_tag = _detect_required_tag()
+
+    run_parent = Path("runs") / SURVEY_VERSION / prompt_behavior_mode
+    run_base = f"run_{datetime.now().strftime('%H%M')}_{required_tag}"
+    out_dir = run_parent / run_base
     if out_dir.exists():
         suffix = 2
-        while (Path("runs") / f"{run_base}_{suffix}").exists():
+        while (run_parent / f"{run_base}_{suffix}").exists():
             suffix += 1
-        out_dir = Path("runs") / f"{run_base}_{suffix}"
+        out_dir = run_parent / f"{run_base}_{suffix}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async with async_playwright() as p:
@@ -778,22 +1252,51 @@ async def main(headless: bool = False):
         page = await context.new_page()
 
         logger = TraceLogger(out_dir)
-        await tool_goto(page, logger, TARGET)
+        if hasattr(brain, "debug_hook"):
+            brain.debug_hook = logger.log
+        run_error: BaseException | None = None
+        try:
+            logger.log(
+                "run_context",
+                {
+                    "survey_version": SURVEY_VERSION,
+                    "prompt_behavior_mode": prompt_behavior_mode,
+                    "planner_mode": getattr(brain, "mode", ""),
+                    "required_tag": required_tag,
+                    "target": TARGET,
+                    "headless": headless,
+                },
+            )
+            await tool_goto(page, logger, TARGET)
 
-        graph = build_graph()
-        ctx = RunCtx(page=page, logger=logger, out_dir=out_dir, brain=_build_brain())
+            graph = build_graph()
+            ctx = RunCtx(page=page, logger=logger, out_dir=out_dir, brain=brain)
 
-        # Run
-        await graph.ainvoke(
-            {"url": TARGET, "step_idx": 0, "max_steps": 50, "done": False},
-            config={"configurable": {"ctx": ctx}},
-        )
+            # Run
+            await graph.ainvoke(
+                {"url": TARGET, "step_idx": 0, "max_steps": 50, "done": False},
+                config={"configurable": {"ctx": ctx}},
+            )
+        except BaseException as exc:
+            run_error = exc
+            logger.log("run_error", {"error_type": type(exc).__name__, "error": str(exc)})
+        finally:
+            logger.save()
+            try:
+                await context.close()
+            except Exception:
+                pass
+            try:
+                await browser.close()
+            except Exception:
+                pass
 
-        logger.save()
-        await context.close()
-        await browser.close()
+        if run_error is not None:
+            raise run_error
 
-    print(f"Saved run artifacts to: {out_dir.resolve()}")
+    resolved = out_dir.resolve()
+    print(f"Saved run artifacts to: {resolved}")
+    return resolved
 
 
 if __name__ == "__main__":
