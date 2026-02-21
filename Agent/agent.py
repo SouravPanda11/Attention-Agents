@@ -424,15 +424,44 @@ def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
     if captcha_inputs:
         cap_input = captcha_inputs[0]
         input_selector = selector_for_any(cap_input)
-        token_regex = re.compile(r"\b(?=[A-Z0-9]{4,8}\b)(?=.*[A-Z])(?=.*\d)[A-Z0-9]{4,8}\b")
+        strict_token = re.compile(r"^[A-Z0-9]{4,8}$")
+        fallback_token = re.compile(r"\b[A-Z0-9]{4,8}\b")
+        blocked_tokens = {"THIS", "TYPE", "CODE", "CAPTCHA", "SHOWN", "EXACTLY"}
+
+        def extract_strict_token(text: str) -> str | None:
+            normalized = re.sub(r"\s+", "", text).upper()
+            if strict_token.fullmatch(normalized) and normalized not in blocked_tokens:
+                return normalized
+            return None
+
+        def extract_fallback_token(text: str) -> str | None:
+            for token in fallback_token.findall(text.upper()):
+                if token in blocked_tokens:
+                    continue
+                if not any(ch.isalpha() for ch in token):
+                    continue
+                if not any(ch.isdigit() for ch in token):
+                    continue
+                return token
+            return None
+
         code_text = None
-        nearby = cap_input.xpath("preceding::*[(self::div or self::span or self::p) and normalize-space()]")
-        for node in reversed(nearby[-30:]):
+        # Prefer text in the same captcha block before scanning broader context.
+        local_nodes = cap_input.xpath("preceding-sibling::*[(self::div or self::span or self::p) and normalize-space()]")
+        for node in reversed(local_nodes):
             text = " ".join(node.itertext()).strip()
-            token = token_regex.search(text.upper())
+            token = extract_strict_token(text)
             if token:
-                code_text = token.group(0)
+                code_text = token
                 break
+        if not code_text:
+            nearby = cap_input.xpath("preceding::*[(self::div or self::span or self::p) and normalize-space()]")
+            for node in reversed(nearby[-30:]):
+                text = " ".join(node.itertext()).strip()
+                token = extract_fallback_token(text)
+                if token:
+                    code_text = token
+                    break
         if code_text:
             schema["captcha"] = {"code_text": code_text, "input_selector": input_selector}
             schema["selectors"]["captcha_input"] = input_selector
