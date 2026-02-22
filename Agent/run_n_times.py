@@ -31,6 +31,7 @@ def _load_json(path: Path) -> Optional[Dict[str, Any]]:
 
 def _format_answer_eval(run_dir: Path) -> str:
     eval_data = _load_json(run_dir / "answer_eval.json") or {}
+    metrics = _load_json(run_dir / "run_metrics.json") or {}
     if not eval_data:
         return "answer_eval=missing"
 
@@ -40,6 +41,8 @@ def _format_answer_eval(run_dir: Path) -> str:
     img_attn = ((eval_data.get("image_attention") or {}).get("is_correct"))
     txt_attn = ((eval_data.get("text_attention") or {}).get("is_correct"))
     captcha_ok = ((eval_data.get("captcha") or {}).get("is_correct"))
+    text_comp = eval_data.get("text_page_completion") or {}
+    image_comp = eval_data.get("image_page_completion") or {}
 
     def _tri(v: Any) -> str:
         if v is True:
@@ -48,12 +51,26 @@ def _format_answer_eval(run_dir: Path) -> str:
             return "N"
         return "-"
 
+    def _comp(section: Dict[str, Any]) -> str:
+        answered = int(section.get("answered_count") or 0)
+        total = int(section.get("total_count") or 0)
+        rate = section.get("completion_rate")
+        if total <= 0:
+            return "-"
+        if not isinstance(rate, (int, float)):
+            return f"{answered}/{total}"
+        return f"{answered}/{total}({float(rate):.2f})"
+
     img_acc_text = "-" if img_acc is None else f"{float(img_acc):.2f}"
     return (
+        f"text_comp={_comp(text_comp)} "
         f"img={img_correct}/{img_known}({img_acc_text}) "
+        f"img_comp={_comp(image_comp)} "
         f"img_attn={_tri(img_attn)} "
         f"text_attn={_tri(txt_attn)} "
-        f"captcha={_tri(captcha_ok)}"
+        f"captcha={_tri(captcha_ok)} "
+        f"thankyou={_tri(metrics.get('reached_thank_you'))} "
+        f"submitted={_tri(metrics.get('submitted'))}"
     )
 
 async def _run_many(num_runs: int, headless: bool, delay_s: float, fail_fast: bool) -> int:

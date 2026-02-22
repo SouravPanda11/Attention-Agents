@@ -1,4 +1,5 @@
 import json
+import csv
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -21,6 +22,8 @@ MODEL_NAME = get_model_name_for_path()
 MODE_FILTER = "completion"
 # Optional JSON export path. Keep empty to disable.
 JSON_OUT = ""
+# CSV export path. Keep empty to disable.
+CSV_OUT = str(Path(__file__).resolve().parent / "runs" / SURVEY_VERSION / MODEL_NAME / "_compare_runs.csv")
 # Plot output controls
 WRITE_PLOTS = True
 PLOTS_DIR = str(Path(__file__).resolve().parent / "runs" / SURVEY_VERSION / MODEL_NAME / "_compare_plots")
@@ -112,6 +115,17 @@ def _image_acc_text(answer_eval: Dict[str, Any]) -> str:
     return f"{correct}/{known}({float(acc):.2f})"
 
 
+def _completion_text(section: Dict[str, Any]) -> str:
+    answered = int(section.get("answered_count") or 0)
+    total = int(section.get("total_count") or 0)
+    rate = section.get("completion_rate")
+    if total <= 0:
+        return "-"
+    if not isinstance(rate, (int, float)):
+        return f"{answered}/{total}"
+    return f"{answered}/{total}({float(rate):.2f})"
+
+
 def _has_gt_trace(answer_eval: Dict[str, Any]) -> bool:
     source = answer_eval.get("ground_truth_source") or {}
     trace_path = source.get("ui_layout_trace_path")
@@ -127,13 +141,16 @@ def _print_mode_report(mode: str, records: List[RunRecord]):
     baseline_order = records[0].metrics.get("answer_order", []) or []
     header = (
         "run",
-        "exec",
-        "uniq_ans",
-        "thankyou",
+        "text_comp",
+        "text_attn",
+        "img_comp",
         "img_acc",
         "img_attn",
-        "txt_attn",
         "captcha",
+        "thankyou",
+        "submitted",
+        "exec",
+        "uniq_ans",
         "gt_trace",
         "next",
         "submit",
@@ -155,16 +172,21 @@ def _print_mode_report(mode: str, records: List[RunRecord]):
         img_attn_ok = ((rec.answer_eval.get("image_attention") or {}).get("is_correct"))
         txt_attn_ok = ((rec.answer_eval.get("text_attention") or {}).get("is_correct"))
         captcha_ok = ((rec.answer_eval.get("captcha") or {}).get("is_correct"))
+        text_comp = _completion_text(rec.answer_eval.get("text_page_completion") or {})
+        image_comp = _completion_text(rec.answer_eval.get("image_page_completion") or {})
 
         row = (
             rec.run_name,
-            str(rec.metrics.get("total_exec_steps", 0)),
-            str(rec.metrics.get("unique_answer_items_touched", 0)),
-            _tri(rec.metrics.get("reached_thank_you")),
+            text_comp,
+            _tri(txt_attn_ok),
+            image_comp,
             _image_acc_text(rec.answer_eval),
             _tri(img_attn_ok),
-            _tri(txt_attn_ok),
             _tri(captcha_ok),
+            _tri(rec.metrics.get("reached_thank_you")),
+            _tri(rec.metrics.get("submitted")),
+            str(rec.metrics.get("total_exec_steps", 0)),
+            str(rec.metrics.get("unique_answer_items_touched", 0)),
             _tri(_has_gt_trace(rec.answer_eval)),
             str(rec.metrics.get("next_click_count", 0)),
             str(rec.metrics.get("submit_click_count", 0)),
@@ -204,6 +226,87 @@ def _build_json_report(records_by_mode: Dict[str, List[RunRecord]]) -> Dict[str,
     return out
 
 
+def _build_csv_rows(records_by_mode: Dict[str, List[RunRecord]]) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+    for mode, records in records_by_mode.items():
+        baseline_order = records[0].metrics.get("answer_order", []) or [] if records else []
+        for rec in records:
+            order = rec.metrics.get("answer_order", []) or []
+            img_attn_ok = ((rec.answer_eval.get("image_attention") or {}).get("is_correct"))
+            txt_attn_ok = ((rec.answer_eval.get("text_attention") or {}).get("is_correct"))
+            captcha_ok = ((rec.answer_eval.get("captcha") or {}).get("is_correct"))
+            text_comp = rec.answer_eval.get("text_page_completion") or {}
+            image_comp = rec.answer_eval.get("image_page_completion") or {}
+            img_known = int(rec.answer_eval.get("image_known_count") or 0)
+            img_correct = int(rec.answer_eval.get("image_correct_count") or 0)
+            rows.append(
+                {
+                    "mode": mode,
+                    "run_name": rec.run_name,
+                    "run_dir": str(rec.run_dir),
+                    "text_completion_answered": int(text_comp.get("answered_count") or 0),
+                    "text_completion_total": int(text_comp.get("total_count") or 0),
+                    "text_completion_rate": text_comp.get("completion_rate"),
+                    "text_attention_ok": txt_attn_ok,
+                    "image_completion_answered": int(image_comp.get("answered_count") or 0),
+                    "image_completion_total": int(image_comp.get("total_count") or 0),
+                    "image_completion_rate": image_comp.get("completion_rate"),
+                    "image_accuracy_correct": img_correct,
+                    "image_accuracy_known_total": img_known,
+                    "image_accuracy_rate": rec.answer_eval.get("image_accuracy_known"),
+                    "image_attention_ok": img_attn_ok,
+                    "captcha_ok": captcha_ok,
+                    "reached_thank_you": rec.metrics.get("reached_thank_you"),
+                    "submitted": rec.metrics.get("submitted"),
+                    "total_exec_steps": rec.metrics.get("total_exec_steps", 0),
+                    "unique_answer_items_touched": rec.metrics.get("unique_answer_items_touched", 0),
+                    "next_click_count": rec.metrics.get("next_click_count", 0),
+                    "submit_click_count": rec.metrics.get("submit_click_count", 0),
+                    "order_same_as_baseline": order == baseline_order,
+                    "order_common_prefix_len": _common_prefix_len(order, baseline_order),
+                    "order_jaccard_overlap": _jaccard(order, baseline_order),
+                    "order_sequence_ratio": _sequence_ratio(order, baseline_order),
+                }
+            )
+    return rows
+
+
+def _write_csv(path: Path, rows: List[Dict[str, Any]]) -> None:
+    fieldnames = [
+        "mode",
+        "run_name",
+        "run_dir",
+        "text_completion_answered",
+        "text_completion_total",
+        "text_completion_rate",
+        "text_attention_ok",
+        "image_completion_answered",
+        "image_completion_total",
+        "image_completion_rate",
+        "image_accuracy_correct",
+        "image_accuracy_known_total",
+        "image_accuracy_rate",
+        "image_attention_ok",
+        "captcha_ok",
+        "reached_thank_you",
+        "submitted",
+        "total_exec_steps",
+        "unique_answer_items_touched",
+        "next_click_count",
+        "submit_click_count",
+        "order_same_as_baseline",
+        "order_common_prefix_len",
+        "order_jaccard_overlap",
+        "order_sequence_ratio",
+    ]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+
 def _plot_mode_table(mode: str, records: List[RunRecord], out_dir: Path) -> Optional[Path]:
     if plt is None:
         return None
@@ -211,34 +314,43 @@ def _plot_mode_table(mode: str, records: List[RunRecord], out_dir: Path) -> Opti
         return None
 
     col_labels = [
+        "text_completion",
+        "text_attention_ok",
+        "image_completion",
         "image_accuracy",
         "image_attention_ok",
-        "text_attention_ok",
         "captcha_ok",
         "reached_thank_you",
+        "submitted",
     ]
     row_labels = [r.run_name for r in records]
     rows: List[List[str]] = []
     for rec in records:
         img_acc = rec.answer_eval.get("image_accuracy_known")
         img_acc_text = "-" if not isinstance(img_acc, (int, float)) else f"{float(img_acc):.2f}"
+        text_comp = _completion_text(rec.answer_eval.get("text_page_completion") or {})
+        image_comp = _completion_text(rec.answer_eval.get("image_page_completion") or {})
         img_attn_ok = (rec.answer_eval.get("image_attention") or {}).get("is_correct")
         txt_attn_ok = (rec.answer_eval.get("text_attention") or {}).get("is_correct")
         captcha_ok = (rec.answer_eval.get("captcha") or {}).get("is_correct")
         reached = rec.metrics.get("reached_thank_you")
+        submitted = rec.metrics.get("submitted")
         rows.append(
             [
+                text_comp,
+                _tri(txt_attn_ok),
+                image_comp,
                 img_acc_text,
                 _tri(img_attn_ok),
-                _tri(txt_attn_ok),
                 _tri(captcha_ok),
                 _tri(reached),
+                _tri(submitted),
             ]
         )
 
     # Height scales with number of runs to keep table readable.
     fig_h = max(4.0, 1.2 + 0.45 * len(records))
-    fig, ax = plt.subplots(figsize=(12, fig_h))
+    fig, ax = plt.subplots(figsize=(16, fig_h))
     ax.axis("off")
     ax.set_title(f"Compare Runs - {mode} (Outcomes Table)", fontsize=14, fontweight="bold", pad=14)
 
@@ -299,6 +411,12 @@ def main() -> int:
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
         print(f"\nWrote JSON report to: {out_path.resolve()}")
+
+    if CSV_OUT:
+        csv_rows = _build_csv_rows(records_by_mode)
+        csv_path = Path(CSV_OUT)
+        _write_csv(csv_path, csv_rows)
+        print(f"\nWrote CSV report to: {csv_path.resolve()} ({len(csv_rows)} rows)")
 
     return 0
 

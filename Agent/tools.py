@@ -98,6 +98,13 @@ class TraceLogger:
                 continue
             latest_by_key[key] = step
 
+        def _is_answered(value: Any) -> bool:
+            if value is None:
+                return False
+            if isinstance(value, str):
+                return bool(value.strip())
+            return True
+
         ui_trace: Dict[str, Any] = {}
         ui_trace_path = self.out_dir / "ui_layout_trace.json"
         if ui_trace_path.exists():
@@ -129,6 +136,29 @@ class TraceLogger:
                     "is_correct": is_correct,
                 }
             )
+
+        text_question_ids = [
+            "age",
+            "follow_by_age",
+            "employment_status",
+            "watch_time",
+            "trust_coverage",
+            "country_satisfaction",
+            "future_interest",
+            "favorite_moment",
+            "mood_impact",
+        ]
+        text_answered_count = sum(
+            1 for qid in text_question_ids if _is_answered((latest_by_key.get(qid) or {}).get("value"))
+        )
+        text_known_count = len(text_question_ids)
+
+        image_question_ids = [str(item.get("question_id") or "").strip() for item in (ui_trace.get("questions") or [])]
+        image_question_ids = [qid for qid in image_question_ids if qid]
+        image_answered_count = sum(
+            1 for qid in image_question_ids if _is_answered((latest_by_key.get(qid) or {}).get("value"))
+        )
+        image_question_count = len(image_question_ids)
 
         image_attention_eval: Optional[Dict[str, Any]] = None
         attention_item = ui_trace.get("image_attention") if isinstance(ui_trace.get("image_attention"), dict) else None
@@ -230,6 +260,16 @@ class TraceLogger:
             "image_known_count": len(known_image),
             "image_correct_count": image_correct_count,
             "image_accuracy_known": (image_correct_count / len(known_image)) if known_image else None,
+            "text_page_completion": {
+                "answered_count": text_answered_count,
+                "total_count": text_known_count,
+                "completion_rate": (text_answered_count / text_known_count) if text_known_count else None,
+            },
+            "image_page_completion": {
+                "answered_count": image_answered_count,
+                "total_count": image_question_count,
+                "completion_rate": (image_answered_count / image_question_count) if image_question_count else None,
+            },
             "image_attention": image_attention_eval,
             "text_attention": text_attention_eval,
             "captcha": captcha_eval,
@@ -327,6 +367,7 @@ class TraceLogger:
             and e.get("has_image_answers_store") is False
             for e in page_markers
         )
+        submitted = bool(submission_cleared_session)
 
         return {
             "survey_version": run_context.get("survey_version"),
@@ -352,6 +393,7 @@ class TraceLogger:
             "reached_thank_you": reached_thank_you,
             "reached_done": reached_done,
             "submission_cleared_session": submission_cleared_session,
+            "submitted": submitted,
             "final_url": _extract_latest_url(),
         }
 
