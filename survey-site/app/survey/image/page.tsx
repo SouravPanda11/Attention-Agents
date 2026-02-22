@@ -61,8 +61,8 @@ function stripLeadingNumber(label: string): string {
 }
 
 // Toggle required-enforcement mode by uncommenting exactly one line.
-// const ENFORCE_REQUIRED_IMAGE_PAGE = true;
-const ENFORCE_REQUIRED_IMAGE_PAGE = false;
+const ENFORCE_REQUIRED_IMAGE_PAGE = true;
+// const ENFORCE_REQUIRED_IMAGE_PAGE = false;
 
 export default function ImageSurveyPage() {
   const [payload, setPayload] = useState<ImagePayload | null>(null);

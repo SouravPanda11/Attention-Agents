@@ -1,4 +1,5 @@
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -92,6 +93,19 @@ class ModelStackConfig:
     vlm: ModelEndpoint
     llm_enabled: bool = True
     vlm_enabled: bool = True
+
+
+def get_model_name_for_path(default: str = "default_model") -> str:
+    """
+    Resolve MODEL_NAME from env and sanitize it for filesystem-safe run folders.
+    """
+    _ensure_env_loaded()
+    raw = os.getenv("MODEL_NAME", "").strip()
+    if not raw:
+        raw = default
+    # Keep only safe path segment characters; collapse everything else to '_'.
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", raw).strip("._-")
+    return safe or default
 
 
 def load_model_stack() -> ModelStackConfig:

@@ -12,7 +12,7 @@ NUM_RUNS = 10
 HEADLESS = True
 DELAY_S = 0.0
 FAIL_FAST = False
-PRINT_ANSWER_EVAL = True
+PRINT_ANSWER_EVAL = False
 
 # Ensure `import agent` works even when launched from workspace root.
 SCRIPT_DIR = Path(__file__).resolve().parent

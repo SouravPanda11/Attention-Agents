@@ -12,7 +12,7 @@ from playwright.async_api import async_playwright
 from lxml import html as lxml_html
 
 from brain import LLMVLMBasedBrain
-from model_stack import load_model_stack
+from model_stack import get_model_name_for_path, load_model_stack
 
 from tools import (
     TraceLogger,
@@ -1264,8 +1264,9 @@ async def main(headless: bool = False) -> Path:
     brain = _build_brain()
     prompt_behavior_mode = getattr(brain, "prompt_behavior_mode", "unknown")
     required_tag = _detect_required_tag()
+    model_name = get_model_name_for_path()
 
-    run_parent = Path("runs") / SURVEY_VERSION / prompt_behavior_mode
+    run_parent = Path("runs") / SURVEY_VERSION / model_name / prompt_behavior_mode
     run_base = f"run_{datetime.now().strftime('%H%M')}_{required_tag}"
     out_dir = run_parent / run_base
     if out_dir.exists():
@@ -1289,6 +1290,7 @@ async def main(headless: bool = False) -> Path:
                 "run_context",
                 {
                     "survey_version": SURVEY_VERSION,
+                    "model_name": model_name,
                     "prompt_behavior_mode": prompt_behavior_mode,
                     "planner_mode": getattr(brain, "mode", ""),
                     "required_tag": required_tag,

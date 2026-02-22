@@ -4,6 +4,8 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from model_stack import get_model_name_for_path
+
 try:
     import matplotlib.pyplot as plt
 except Exception:
@@ -14,13 +16,14 @@ except Exception:
 # -----------------------------
 RUNS_ROOT = str(Path(__file__).resolve().parent / "runs")
 SURVEY_VERSION = "survey_v0"
+MODEL_NAME = get_model_name_for_path()
 # "all" | "completion" | "unconstrained"
-MODE_FILTER = "unconstrained"
+MODE_FILTER = "completion"
 # Optional JSON export path. Keep empty to disable.
 JSON_OUT = ""
 # Plot output controls
 WRITE_PLOTS = True
-PLOTS_DIR = str(Path(__file__).resolve().parent / "runs" / SURVEY_VERSION / "_compare_plots")
+PLOTS_DIR = str(Path(__file__).resolve().parent / "runs" / SURVEY_VERSION / MODEL_NAME / "_compare_plots")
 
 
 def _load_json(path: Path) -> Optional[Dict[str, Any]]:
@@ -74,7 +77,7 @@ class RunRecord:
 
 
 def _collect_runs(root: Path, survey_version: str, mode: str) -> List[RunRecord]:
-    mode_dir = root / survey_version / mode
+    mode_dir = root / survey_version / MODEL_NAME / mode
     if not mode_dir.exists():
         return []
 
@@ -270,6 +273,7 @@ def main() -> int:
 
     print(f"runs_root={root}")
     print(f"survey_version={SURVEY_VERSION}")
+    print(f"model_name={MODEL_NAME}")
     if WRITE_PLOTS and plt is None:
         print("Plotting disabled: matplotlib is not available in this Python environment.")
     plot_paths: List[Path] = []

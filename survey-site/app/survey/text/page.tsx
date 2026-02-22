@@ -39,8 +39,8 @@ function fieldStyle(): CSSProperties {
 }
 
 // Toggle required-enforcement mode by uncommenting exactly one line.
-// const ENFORCE_REQUIRED_TEXT_PAGE = true;
-const ENFORCE_REQUIRED_TEXT_PAGE = false;
+const ENFORCE_REQUIRED_TEXT_PAGE = true;
+// const ENFORCE_REQUIRED_TEXT_PAGE = false;
 
 function isAnswered(value: TextAnswerValue): boolean {
   if (value === undefined || value === null) return false;
