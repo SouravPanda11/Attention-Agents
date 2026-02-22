@@ -367,7 +367,7 @@ class TraceLogger:
             and e.get("has_image_answers_store") is False
             for e in page_markers
         )
-        submitted = bool(submission_cleared_session)
+        submitted = bool(submission_cleared_session or reached_done)
 
         return {
             "survey_version": run_context.get("survey_version"),

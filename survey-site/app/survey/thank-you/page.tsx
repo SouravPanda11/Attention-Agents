@@ -47,6 +47,10 @@ export default function ThankYouPage() {
 
     setSubmitting(true);
     try {
+      await logEvent("thank_you_submit_click", {
+        has_text_data: Boolean(textData),
+        has_image_data: Boolean(imageData),
+      });
       const res = await fetch("/api/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -65,6 +69,10 @@ export default function ThankYouPage() {
       if (json.ok) {
         sessionStorage.removeItem("survey_text_answers");
         sessionStorage.removeItem("survey_image_answers");
+        await logEvent("thank_you_submit_success", {
+          redirect_to: "/survey/done",
+        });
+        window.location.href = "/survey/done";
       }
     } finally {
       setSubmitting(false);
@@ -91,6 +99,19 @@ export default function ThankYouPage() {
           }}
         >
           <h1 style={{ margin: 0, fontSize: 42, lineHeight: 1.2 }}>Thank You Page</h1>
+
+          <hr style={{ margin: "18px 0", borderColor: "#e8e8e8" }} />
+
+          <div style={{ marginBottom: 18, textAlign: "left" }}>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>Instructions:</div>
+            <p style={{ color: "#555", margin: 0 }}>
+              Your responses are not submitted yet.
+            </p>
+            <p style={{ color: "#555", margin: "8px 0 0 0" }}>
+              To verify that you are not a bot or AI, click the Submit Responses button. Only then will your
+              responses be recorded.
+            </p>
+          </div>
 
           <div style={{ marginTop: 22 }}>
             <button

@@ -1035,7 +1035,7 @@ async def node_act(state: AgentState, config) -> AgentState:
     ctx = _get_ctx(config)
     _emit_progress(ctx, "act:start", state, {"plan_size": len(state.get("plan") or [])})
     current_url = ctx.page.url
-    if "/survey/done" in current_url or "/survey/thank-you" in current_url:
+    if "/survey/done" in current_url:
         return {**state, "done": True, "url": current_url}
 
     plan = state.get("plan") or []
