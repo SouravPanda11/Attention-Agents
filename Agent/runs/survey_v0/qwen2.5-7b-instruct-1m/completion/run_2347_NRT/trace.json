@@ -1,0 +1,760 @@
+[
+  {
+    "seq": 1,
+    "ts_utc": "2026-02-22T04:47:05.997985+00:00",
+    "kind": "run_context",
+    "survey_version": "survey_v0",
+    "model_name": "qwen2.5-7b-instruct-1m",
+    "prompt_behavior_mode": "completion",
+    "planner_mode": "llm_only",
+    "required_tag": "NRT",
+    "target": "http://localhost:3000/survey",
+    "headless": true
+  },
+  {
+    "seq": 2,
+    "ts_utc": "2026-02-22T04:47:06.788273+00:00",
+    "kind": "goto",
+    "url": "http://localhost:3000/survey",
+    "current_url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 3,
+    "ts_utc": "2026-02-22T04:47:06.822358+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 4,
+    "ts_utc": "2026-02-22T04:47:06.834334+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 5,
+    "ts_utc": "2026-02-22T04:47:06.902297+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\shot_1.png",
+    "full_page": true
+  },
+  {
+    "seq": 6,
+    "ts_utc": "2026-02-22T04:47:06.904716+00:00",
+    "kind": "page_marker",
+    "step_idx": 1,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 7,
+    "ts_utc": "2026-02-22T04:47:06.906991+00:00",
+    "kind": "action_space",
+    "step_idx": 1,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_1.json",
+    "field_count": 12,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 2
+    }
+  },
+  {
+    "seq": 8,
+    "ts_utc": "2026-02-22T04:47:06.907353+00:00",
+    "kind": "page_changed",
+    "old_url": "http://localhost:3000/survey",
+    "new_url": "http://localhost:3000/survey/text",
+    "reset_plan_feedback": true
+  },
+  {
+    "seq": 9,
+    "ts_utc": "2026-02-22T04:47:06.907652+00:00",
+    "kind": "observe_state",
+    "step_idx": 1,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 10,
+    "ts_utc": "2026-02-22T04:47:06.908583+00:00",
+    "kind": "plan_input",
+    "step_idx": 1,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_1.json",
+    "action_space_field_count": 12
+  },
+  {
+    "seq": 11,
+    "ts_utc": "2026-02-22T04:47:09.594724+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 0,
+    "raw": "[\n    {\"tool\":\"fill\",\"key\":\"age\",\"value\":30},\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Agree\"},\n    {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"somewhat\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":3},\n    {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7},\n    {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"very_likely\"},\n    {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"Watching\u8c37\u7231\u51cc's performance.\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 12,
+    "ts_utc": "2026-02-22T04:47:09.595450+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact', 'employment_status']"
+  },
+  {
+    "seq": 13,
+    "ts_utc": "2026-02-22T04:47:10.218396+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 1,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"Student\"}\n]"
+  },
+  {
+    "seq": 14,
+    "ts_utc": "2026-02-22T04:47:10.218956+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 15,
+    "ts_utc": "2026-02-22T04:47:10.941389+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 2,
+    "raw": "[\n    {\"tool\": \"select\", \"key\": \"mood_impact\", \"value\": \"somewhat\"},\n    {\"tool\": \"select\", \"key\": \"employment_status\", \"value\": \"student\"}\n]"
+  },
+  {
+    "seq": 16,
+    "ts_utc": "2026-02-22T04:47:10.941973+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'somewhat'}"
+  },
+  {
+    "seq": 17,
+    "ts_utc": "2026-02-22T04:47:10.942446+00:00",
+    "kind": "plan_fallback",
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'somewhat'}"
+  },
+  {
+    "seq": 18,
+    "ts_utc": "2026-02-22T04:47:10.942741+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 19,
+    "ts_utc": "2026-02-22T04:47:10.946777+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 20,
+    "ts_utc": "2026-02-22T04:47:10.949208+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 21,
+    "ts_utc": "2026-02-22T04:47:11.029127+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\shot_2.png",
+    "full_page": true
+  },
+  {
+    "seq": 22,
+    "ts_utc": "2026-02-22T04:47:11.031252+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 23,
+    "ts_utc": "2026-02-22T04:47:11.033570+00:00",
+    "kind": "action_space",
+    "step_idx": 2,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_2.json",
+    "field_count": 12,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 2
+    }
+  },
+  {
+    "seq": 24,
+    "ts_utc": "2026-02-22T04:47:11.033912+00:00",
+    "kind": "observe_state",
+    "step_idx": 2,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 25,
+    "ts_utc": "2026-02-22T04:47:11.034803+00:00",
+    "kind": "plan_input",
+    "step_idx": 2,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_2.json",
+    "action_space_field_count": 12
+  },
+  {
+    "seq": 26,
+    "ts_utc": "2026-02-22T04:47:11.035193+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact', 'employment_status']",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+    ]
+  },
+  {
+    "seq": 27,
+    "ts_utc": "2026-02-22T04:47:11.660629+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n  {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n  {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"}\n]"
+  },
+  {
+    "seq": 28,
+    "ts_utc": "2026-02-22T04:47:11.661189+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 29,
+    "ts_utc": "2026-02-22T04:47:14.157091+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"fill\", \"key\": \"age\", \"value\": 25},\n    {\"tool\": \"select\", \"key\": \"follow_by_age\", \"value\": \"very_closely\"},\n    {\"tool\": \"select\", \"key\": \"employment_status\", \"value\": \"full_time\"},\n    {\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": 3.5},\n    {\"tool\": \"check\", \"key\": \"trust_coverage\", \"value\": \"Agree\"},\n    {\"tool\": \"select\", \"key\": \"attention_text_mid\", \"value\": \"somewhat\"},\n    {\"tool\": \"set_range\", \"key\": \"country_satisfaction\", \"value\": 7},\n    {\"tool\": \"select\", \"key\": \"future_interest\", \"value\": \"likely\"},\n    {\"tool\": \"fill\", \"key\": \"favorite_moment\", \"value\": \"Watching the gold medal race.\"},\n    {\"tool\": \"click\", \"key\": \"next\"}\n]"
+  },
+  {
+    "seq": 30,
+    "ts_utc": "2026-02-22T04:47:14.157748+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact']"
+  },
+  {
+    "seq": 31,
+    "ts_utc": "2026-02-22T04:47:14.819293+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"select\", \"key\": \"mood_impact\", \"value\": \"somewhat\"},\n    {\"tool\": \"click\", \"key\": \"next\"}\n]"
+  },
+  {
+    "seq": 32,
+    "ts_utc": "2026-02-22T04:47:14.819927+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'somewhat'}"
+  },
+  {
+    "seq": 33,
+    "ts_utc": "2026-02-22T04:47:14.820328+00:00",
+    "kind": "plan_fallback",
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'somewhat'}"
+  },
+  {
+    "seq": 34,
+    "ts_utc": "2026-02-22T04:47:14.820762+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 35,
+    "ts_utc": "2026-02-22T04:47:14.824035+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 36,
+    "ts_utc": "2026-02-22T04:47:14.826015+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 37,
+    "ts_utc": "2026-02-22T04:47:14.900583+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\shot_3.png",
+    "full_page": true
+  },
+  {
+    "seq": 38,
+    "ts_utc": "2026-02-22T04:47:14.902464+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 39,
+    "ts_utc": "2026-02-22T04:47:14.904799+00:00",
+    "kind": "action_space",
+    "step_idx": 3,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_3.json",
+    "field_count": 12,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 2
+    }
+  },
+  {
+    "seq": 40,
+    "ts_utc": "2026-02-22T04:47:14.905156+00:00",
+    "kind": "observe_state",
+    "step_idx": 3,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 41,
+    "ts_utc": "2026-02-22T04:47:14.906128+00:00",
+    "kind": "plan_input",
+    "step_idx": 3,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_3.json",
+    "action_space_field_count": 12
+  },
+  {
+    "seq": 42,
+    "ts_utc": "2026-02-22T04:47:14.906482+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact']",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+    ]
+  },
+  {
+    "seq": 43,
+    "ts_utc": "2026-02-22T04:47:15.574910+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"check\", \"key\": \"mood_impact\", \"value\": \"Somewhat\"},\n    {\"tool\": \"click\", \"key\": \"next\"}\n]"
+  },
+  {
+    "seq": 44,
+    "ts_utc": "2026-02-22T04:47:15.575466+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 45,
+    "ts_utc": "2026-02-22T04:47:16.110815+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"click\", \"key\": \"mood_impact\", \"value\": \"Somewhat\"}\n]"
+  },
+  {
+    "seq": 46,
+    "ts_utc": "2026-02-22T04:47:16.111521+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'click', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 47,
+    "ts_utc": "2026-02-22T04:47:16.977989+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"click\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"}\n]"
+  },
+  {
+    "seq": 48,
+    "ts_utc": "2026-02-22T04:47:16.978834+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 49,
+    "ts_utc": "2026-02-22T04:47:16.979348+00:00",
+    "kind": "plan_fallback",
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 50,
+    "ts_utc": "2026-02-22T04:47:16.979817+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 51,
+    "ts_utc": "2026-02-22T04:47:16.983433+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 52,
+    "ts_utc": "2026-02-22T04:47:16.985669+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 53,
+    "ts_utc": "2026-02-22T04:47:17.052982+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\shot_4.png",
+    "full_page": true
+  },
+  {
+    "seq": 54,
+    "ts_utc": "2026-02-22T04:47:17.055002+00:00",
+    "kind": "page_marker",
+    "step_idx": 4,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 55,
+    "ts_utc": "2026-02-22T04:47:17.057380+00:00",
+    "kind": "action_space",
+    "step_idx": 4,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_4.json",
+    "field_count": 12,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 2
+    }
+  },
+  {
+    "seq": 56,
+    "ts_utc": "2026-02-22T04:47:17.057810+00:00",
+    "kind": "observe_state",
+    "step_idx": 4,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 57,
+    "ts_utc": "2026-02-22T04:47:17.058776+00:00",
+    "kind": "plan_input",
+    "step_idx": 4,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_4.json",
+    "action_space_field_count": 12
+  },
+  {
+    "seq": 58,
+    "ts_utc": "2026-02-22T04:47:17.059170+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'click', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+    ]
+  },
+  {
+    "seq": 59,
+    "ts_utc": "2026-02-22T04:47:17.726119+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"check\", \"key\": \"mood_impact\", \"value\": \"Somewhat\"},\n    {\"tool\": \"click\", \"key\": \"next\"}\n]"
+  },
+  {
+    "seq": 60,
+    "ts_utc": "2026-02-22T04:47:17.726737+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 61,
+    "ts_utc": "2026-02-22T04:47:18.394430+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"click\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"somewhat\"}\n]"
+  },
+  {
+    "seq": 62,
+    "ts_utc": "2026-02-22T04:47:18.395067+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'click', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 63,
+    "ts_utc": "2026-02-22T04:47:19.283550+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"click\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"}\n]"
+  },
+  {
+    "seq": 64,
+    "ts_utc": "2026-02-22T04:47:19.284166+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 65,
+    "ts_utc": "2026-02-22T04:47:19.284684+00:00",
+    "kind": "plan_fallback",
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 66,
+    "ts_utc": "2026-02-22T04:47:19.285081+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 67,
+    "ts_utc": "2026-02-22T04:47:19.288467+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 68,
+    "ts_utc": "2026-02-22T04:47:19.290862+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 69,
+    "ts_utc": "2026-02-22T04:47:19.368626+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\shot_5.png",
+    "full_page": true
+  },
+  {
+    "seq": 70,
+    "ts_utc": "2026-02-22T04:47:19.370724+00:00",
+    "kind": "page_marker",
+    "step_idx": 5,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 71,
+    "ts_utc": "2026-02-22T04:47:19.373125+00:00",
+    "kind": "action_space",
+    "step_idx": 5,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_5.json",
+    "field_count": 12,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 2
+    }
+  },
+  {
+    "seq": 72,
+    "ts_utc": "2026-02-22T04:47:19.373533+00:00",
+    "kind": "observe_state",
+    "step_idx": 5,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 73,
+    "ts_utc": "2026-02-22T04:47:19.374505+00:00",
+    "kind": "plan_input",
+    "step_idx": 5,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_2347_NRT\\action_space_5.json",
+    "action_space_field_count": 12
+  },
+  {
+    "seq": 74,
+    "ts_utc": "2026-02-22T04:47:19.374980+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'click', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+    ]
+  },
+  {
+    "seq": 75,
+    "ts_utc": "2026-02-22T04:47:19.962511+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 76,
+    "ts_utc": "2026-02-22T04:47:19.963168+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 77,
+    "ts_utc": "2026-02-22T04:47:20.631108+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"}\n]"
+  },
+  {
+    "seq": 78,
+    "ts_utc": "2026-02-22T04:47:20.631806+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 79,
+    "ts_utc": "2026-02-22T04:47:21.299665+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 12,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"}\n]"
+  },
+  {
+    "seq": 80,
+    "ts_utc": "2026-02-22T04:47:21.300372+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 81,
+    "ts_utc": "2026-02-22T04:47:21.300879+00:00",
+    "kind": "plan_fallback",
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 82,
+    "ts_utc": "2026-02-22T04:47:21.301287+00:00",
+    "kind": "plan_stalled",
+    "empty_plan_streak": 5,
+    "max_empty_plan_streak": 5,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 83,
+    "ts_utc": "2026-02-22T04:47:21.301663+00:00",
+    "kind": "plan",
+    "steps": []
+  }
+]
