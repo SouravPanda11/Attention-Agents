@@ -579,24 +579,50 @@ def build_action_space(schema: Dict[str, Any]) -> Dict[str, Any]:
         action_fields.append(action_field)
 
     selectors_map = schema.get("selectors") or {}
+    nav_selectors: Dict[str, str] = {}
     for nav_key in ("next", "submit"):
         nav_selector = selectors_map.get(nav_key)
-        if (
-            isinstance(nav_selector, str)
-            and nav_selector
-            and nav_key not in seen_keys
-        ):
-            action_fields.append(
-                {
-                    "key": nav_key,
-                    "interaction": "click",
-                    "selector": nav_selector,
-                    "label": nav_key,
-                    "kind": "navigation_control",
-                    "required": False,
-                }
-            )
-            seen_keys.add(nav_key)
+        if isinstance(nav_selector, str) and nav_selector:
+            nav_selectors[nav_key] = nav_selector
+
+    # Prefer canonical nav keys (next/submit) and drop duplicate generic click fields
+    # that target the exact same selector.
+    if nav_selectors:
+        canonical_nav_keys = set(nav_selectors.keys())
+        canonical_nav_selectors = set(nav_selectors.values())
+        deduped_fields: List[Dict[str, Any]] = []
+        for field in action_fields:
+            interaction = str(field.get("interaction") or "")
+            key = str(field.get("key") or "")
+            selector = str(field.get("selector") or "")
+            if (
+                interaction == "click"
+                and selector in canonical_nav_selectors
+                and key not in canonical_nav_keys
+            ):
+                continue
+            deduped_fields.append(field)
+        action_fields = deduped_fields
+        seen_keys = {
+            str(field.get("key"))
+            for field in action_fields
+            if isinstance(field.get("key"), str) and field.get("key")
+        }
+
+    for nav_key, nav_selector in nav_selectors.items():
+        if nav_key in seen_keys:
+            continue
+        action_fields.append(
+            {
+                "key": nav_key,
+                "interaction": "click",
+                "selector": nav_selector,
+                "label": nav_key,
+                "kind": "navigation_control",
+                "required": False,
+            }
+        )
+        seen_keys.add(nav_key)
 
     for shape in (schema.get("shapes") or []):
         if not isinstance(shape, dict):
@@ -1332,3 +1358,4 @@ async def main(headless: bool = False) -> Path:
 
 if __name__ == "__main__":
     asyncio.run(main(headless=False))
+
