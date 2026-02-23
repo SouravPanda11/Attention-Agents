@@ -4,6 +4,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
 
@@ -313,6 +314,23 @@ class TraceLogger:
                         return value
             return ""
 
+        def _extract_route_prefix(target_url: Any) -> str:
+            target_text = str(target_url or "").strip()
+            if not target_text:
+                return "/survey"
+            path = urlparse(target_text).path or "/survey"
+            path = path.rstrip("/")
+            return path if path else "/survey"
+
+        def _extract_path(url_or_path: Any) -> str:
+            text = str(url_or_path or "").strip()
+            if not text:
+                return ""
+            parsed = urlparse(text)
+            if parsed.scheme or parsed.netloc:
+                return parsed.path or ""
+            return text
+
         answer_steps = [s for s in exec_steps if _looks_like_answer_step(s)]
         unique_answer_ids: List[str] = []
         seen_answer_ids = set()
@@ -336,6 +354,9 @@ class TraceLogger:
         ]
         run_context = next((e for e in self.steps if e.get("kind") == "run_context"), {})
         page_markers = [e for e in self.steps if e.get("kind") == "page_marker"]
+        route_prefix = _extract_route_prefix(run_context.get("target"))
+        thank_you_path = f"{route_prefix}/thank-you"
+        done_path = f"{route_prefix}/done"
         reached_urls = {
             str(e.get("url"))
             for e in self.steps
@@ -347,9 +368,11 @@ class TraceLogger:
             if isinstance(e.get("new_url"), str) and e.get("new_url")
         )
         reached_urls = {u for u in reached_urls if u}
+        reached_paths = {_extract_path(u) for u in reached_urls}
+        reached_paths = {p for p in reached_paths if p}
 
-        reached_thank_you = any("/survey/thank-you" in u for u in reached_urls)
-        reached_done = any("/survey/done" in u for u in reached_urls)
+        reached_thank_you = any(p == thank_you_path for p in reached_paths)
+        reached_done = any(p == done_path for p in reached_paths)
         next_click_count = sum(
             1 for s in exec_steps if s.get("tool") == "click" and "next" in _lower(s.get("selector"))
         )
@@ -362,7 +385,7 @@ class TraceLogger:
             "vlm": sum(1 for e in model_raw_events if e.get("source") == "vlm"),
         }
         submission_cleared_session = any(
-            "/survey/thank-you" in str(e.get("url", ""))
+            _extract_path(e.get("url")) == thank_you_path
             and e.get("has_text_answers_store") is False
             and e.get("has_image_answers_store") is False
             for e in page_markers

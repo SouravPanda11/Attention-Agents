@@ -394,7 +394,7 @@ def parse_survey_dom(dom_html: str) -> Dict[str, Any]:
         for name in radios_by_name.keys()
     )
 
-    # Parse likely image answer options on /survey/image only when structured radio groups are absent.
+    # Parse likely image answer options on the image page only when structured radio groups are absent.
     if not has_structured_image_checks:
         image_option_idx = 0
         for el in tree.cssselect("div, figure, a, button, label, img, [role='button'], div[role], div[onclick]"):
