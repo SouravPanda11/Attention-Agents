@@ -63,6 +63,11 @@ def _ensure_env_loaded():
     _ENV_LOADED = True
 
 
+def ensure_env_loaded() -> None:
+    """Public wrapper so other modules can load Agent/.env before reading os.getenv."""
+    _ensure_env_loaded()
+
+
 def _normalize_openai_base(url: str) -> str:
     """
     Normalize base_url so our client can safely do:

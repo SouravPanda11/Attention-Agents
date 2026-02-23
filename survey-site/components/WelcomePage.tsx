@@ -14,19 +14,39 @@ export default function WelcomePage() {
           This is a controlled survey website for Agentic-AI evaluation.
         </p>
 
-        <a
-          href="/survey/text"
+        <div
           style={{
-            display: "inline-block",
+            display: "flex",
+            gap: 16,
+            justifyContent: "center",
+            alignItems: "center",
             marginTop: 18,
-            textDecoration: "none",
-            color: "#2c6bed",
-            fontWeight: 600,
-            fontSize: 16,
+            flexWrap: "wrap",
           }}
         >
-          Start survey {"->"}
-        </a>
+          <a
+            href="/survey/text"
+            style={{
+              textDecoration: "none",
+              color: "#2c6bed",
+              fontWeight: 600,
+              fontSize: 16,
+            }}
+          >
+            Start survey_v0 {"->"}
+          </a>
+          <a
+            href="/survey_v1/text"
+            style={{
+              textDecoration: "none",
+              color: "#2c6bed",
+              fontWeight: 600,
+              fontSize: 16,
+            }}
+          >
+            Start survey_v1 {"->"}
+          </a>
+        </div>
       </div>
     </main>
   );

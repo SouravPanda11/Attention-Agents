@@ -78,22 +78,23 @@ export default function ImageSurveyPage() {
 
   useEffect(() => {
     (async () => {
-      const hasTextAnswers = Boolean(sessionStorage.getItem("survey_text_answers"));
+      const hasTextAnswers = Boolean(sessionStorage.getItem("survey_v1_text_answers"));
       if (!hasTextAnswers) {
         setMissingTextFlow(true);
         return;
       }
 
-      const res = await fetch("/api/survey");
+      const res = await fetch("/api/survey_v1");
       const json = (await res.json()) as ImagePayload;
       setPayload(json);
       if (typeof window !== "undefined") {
         (window as SurveyWindow).__surveyLayoutTrace = json.image.layout_trace ?? null;
       }
-      await logEvent("image_page_view", { page: "/survey/image" });
+      await logEvent("image_page_view", { page: "/survey_v1/image", survey_version: "survey_v1" });
       if (json.image.layout_trace) {
         await logEvent("image_layout_trace", {
-          page: "/survey/image",
+          page: "/survey_v1/image",
+          survey_version: "survey_v1",
           layout_trace: json.image.layout_trace,
         });
       }
@@ -109,7 +110,7 @@ export default function ImageSurveyPage() {
     return (
       <main style={{ padding: 40 }}>
         <p>Please complete the text survey first.</p>
-        <a href="/survey/text" style={{ color: "#2c6bed" }}>
+        <a href="/survey_v1/text" style={{ color: "#2c6bed" }}>
           Go to text survey
         </a>
       </main>
@@ -148,13 +149,14 @@ export default function ImageSurveyPage() {
       captcha_input: captchaInput,
       image_attention_choice: imageAttentionChoice,
     };
-    sessionStorage.setItem("survey_image_answers", JSON.stringify(data));
+    sessionStorage.setItem("survey_v1_image_answers", JSON.stringify(data));
     await logEvent("image_page_saved", {
       answer_count: Object.keys(answers).length,
       has_captcha: Boolean(captchaInput),
       has_image_attention_choice: Boolean(imageAttentionChoice),
+      survey_version: "survey_v1",
     });
-    window.location.href = "/survey/thank-you";
+    window.location.href = "/survey_v1/thank-you";
   }
 
   return (

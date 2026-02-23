@@ -21,6 +21,10 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+Available survey routes:
+- `http://localhost:3000/survey` (`survey_v0`)
+- `http://localhost:3000/survey_v1` (`survey_v1`, masked image metadata)
+
 ## Build and Run (Production)
 
 ```bash

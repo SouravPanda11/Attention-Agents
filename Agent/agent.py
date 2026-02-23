@@ -1,18 +1,20 @@
 import asyncio
 import json
+import os
 import re
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, TypedDict
+from urllib.parse import urlparse
 
 from langgraph.graph import StateGraph, END
 from playwright.async_api import async_playwright
 from lxml import html as lxml_html
 
 from brain import LLMVLMBasedBrain
-from model_stack import get_model_name_for_path, load_model_stack
+from model_stack import ensure_env_loaded, get_model_name_for_path, load_model_stack
 
 from tools import (
     TraceLogger,
@@ -29,8 +31,9 @@ from tools import (
     tool_check,
 )
 
-TARGET = "http://localhost:3000/survey"
-SURVEY_VERSION = "survey_v0"
+ensure_env_loaded()
+TARGET = os.getenv("SURVEY_TARGET", "http://localhost:3000/survey")
+SURVEY_VERSION = os.getenv("SURVEY_VERSION", "survey_v0")
 MAX_EMPTY_PLAN_STREAK = 5
 MAX_PLAN_RETRIES = 2
 MAX_FEEDBACK_MEMORY = 3
@@ -41,6 +44,20 @@ SAVE_DOM_HTML_ARTIFACTS = False
 # Toggle live progress heartbeat in console + trace.
 # ENABLE_LIVE_PROGRESS = True
 ENABLE_LIVE_PROGRESS = False
+
+
+def _survey_route_prefix(target_url: str) -> str:
+    path = urlparse(target_url).path or "/survey"
+    path = path.rstrip("/")
+    return path if path else "/survey"
+
+
+SURVEY_ROUTE_PREFIX = _survey_route_prefix(TARGET)
+
+
+def _is_survey_stage(url: str, stage: str) -> bool:
+    path = urlparse(url).path
+    return path == f"{SURVEY_ROUTE_PREFIX}/{stage}"
 
 
 class AgentState(TypedDict, total=False):
@@ -760,8 +777,14 @@ async def _log_page_marker(page: Any, logger: TraceLogger, step_idx: int, stage:
                 let hasTextAnswers = null;
                 let hasImageAnswers = null;
                 try {
-                    hasTextAnswers = Boolean(sessionStorage.getItem("survey_text_answers"));
-                    hasImageAnswers = Boolean(sessionStorage.getItem("survey_image_answers"));
+                    hasTextAnswers = Boolean(
+                        sessionStorage.getItem("survey_text_answers") ||
+                        sessionStorage.getItem("survey_v1_text_answers")
+                    );
+                    hasImageAnswers = Boolean(
+                        sessionStorage.getItem("survey_image_answers") ||
+                        sessionStorage.getItem("survey_v1_image_answers")
+                    );
                 } catch (_) {}
                 return {
                     title,
@@ -809,8 +832,12 @@ def _detect_required_tag() -> str:
     - "NRT" otherwise
     """
     root = Path(__file__).resolve().parent.parent
-    text_page = root / "survey-site" / "app" / "survey" / "text" / "page.tsx"
-    image_page = root / "survey-site" / "app" / "survey" / "image" / "page.tsx"
+    route_dir = SURVEY_ROUTE_PREFIX.lstrip("/") or "survey"
+    text_page = root / "survey-site" / "app" / route_dir / "text" / "page.tsx"
+    image_page = root / "survey-site" / "app" / route_dir / "image" / "page.tsx"
+    if not text_page.exists() or not image_page.exists():
+        text_page = root / "survey-site" / "app" / "survey" / "text" / "page.tsx"
+        image_page = root / "survey-site" / "app" / "survey" / "image" / "page.tsx"
     pattern = re.compile(r"^\s*const\s+ENFORCE_REQUIRED_[A-Z_]+\s*=\s*(true|false)\s*;", re.MULTILINE)
 
     def _is_required_true(path: Path) -> bool:
@@ -837,7 +864,7 @@ async def node_observe(state: AgentState, config) -> AgentState:
     prior_url = str(state.get("url", ""))
     current_url = ctx.page.url
 
-    if "/survey/done" not in current_url and "/survey/thank-you" not in current_url:
+    if not _is_survey_stage(current_url, "done") and not _is_survey_stage(current_url, "thank-you"):
         # 1) Wait for Next.js/SPA to finish initial "Loading..." shell (if present)
         await tool_wait_for_not_loading(ctx.page, ctx.logger, timeout_ms=20_000)
 
@@ -877,7 +904,7 @@ async def node_observe(state: AgentState, config) -> AgentState:
                 "item_count": len(image_option_map.get("image_items") or []),
             },
         )
-    if "/survey/image" in current_url:
+    if _is_survey_stage(current_url, "image"):
         ui_layout_trace = await _read_ui_layout_trace(ctx.page)
         if ui_layout_trace:
             ui_layout_trace_path = ctx.out_dir / f"ui_layout_trace_{step_idx}.json"
@@ -1061,7 +1088,7 @@ async def node_act(state: AgentState, config) -> AgentState:
     ctx = _get_ctx(config)
     _emit_progress(ctx, "act:start", state, {"plan_size": len(state.get("plan") or [])})
     current_url = ctx.page.url
-    if "/survey/done" in current_url:
+    if _is_survey_stage(current_url, "done"):
         return {**state, "done": True, "url": current_url}
 
     plan = state.get("plan") or []
