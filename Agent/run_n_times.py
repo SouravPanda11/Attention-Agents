@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 # -----------------------------
 # Editable in-code configuration
 # -----------------------------
-NUM_RUNS = 100
+NUM_RUNS = 5
 HEADLESS = True
 DELAY_S = 0.0
 FAIL_FAST = False
