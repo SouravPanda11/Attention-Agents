@@ -3,13 +3,11 @@ import type { ImageAttentionCheck, ImageQuestion } from "@/lib/surveys/types";
 type ImageLayoutTraceItem = {
   question_id: string;
   option_order: string[];
-  correct_option_id: string;
 };
 
 type ImageAttentionLayoutTrace = {
   question_id: string;
   option_order: string[];
-  expected_option_id: string;
 };
 
 type RandomizedImageSurvey = {
@@ -104,7 +102,6 @@ const IMAGE_QUESTIONS_BASE_V1: ImageQuestion[] = [
 export const imageAttentionCheckV1: ImageAttentionCheck = {
   id: "attention_image_mid",
   label: "Select the soccer ball.",
-  expectedOptionId: "attn_a",
   options: [
     {
       id: "attn_a",
@@ -143,15 +140,11 @@ export function getRandomizedImageSurveyV1(): RandomizedImageSurvey {
   const layoutTraceQuestions: ImageLayoutTraceItem[] = randomizedQuestions.map((q) => ({
     question_id: q.id,
     option_order: q.options.map((opt) => opt.id),
-    // Survey definition convention: canonical first option is correct.
-    correct_option_id:
-      IMAGE_QUESTIONS_BASE_V1.find((base) => base.id === q.id)?.options[0].id ?? "",
   }));
 
   const attentionTrace: ImageAttentionLayoutTrace = {
     question_id: randomizedAttention.id,
     option_order: randomizedAttention.options.map((opt) => opt.id),
-    expected_option_id: randomizedAttention.expectedOptionId,
   };
 
   return {

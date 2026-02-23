@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
 import { getOrCreateSessionId } from "@/lib/session";
-import { imageAttentionCheckV1 } from "@/lib/surveys/imageSurvey_v1";
-import { textAttentionCheck } from "@/lib/surveys/textSurvey";
+
+const TEXT_ATTENTION_EXPECTED_VALUE_V1 = "somewhat";
+const IMAGE_ATTENTION_EXPECTED_OPTION_ID_V1 = "attn_a";
 
 type SubmitBody = {
   text_answers?: Record<string, string | number | undefined>;
@@ -39,9 +40,9 @@ export async function POST(req: Request) {
   const imageAttentionChoice = String(body.image_attention_choice ?? "");
   const expectedCaptcha = String(jar.get("captcha_code_v1")?.value ?? "");
 
-  const textAttentionOk = textAttentionValue === textAttentionCheck.expectedValue;
+  const textAttentionOk = textAttentionValue === TEXT_ATTENTION_EXPECTED_VALUE_V1;
   const captchaOk = Boolean(expectedCaptcha) && captchaInput.trim().toUpperCase() === expectedCaptcha;
-  const imageAttentionOk = imageAttentionChoice === imageAttentionCheckV1.expectedOptionId;
+  const imageAttentionOk = imageAttentionChoice === IMAGE_ATTENTION_EXPECTED_OPTION_ID_V1;
 
   const ok = Boolean(textAttentionOk && captchaOk && imageAttentionOk);
 

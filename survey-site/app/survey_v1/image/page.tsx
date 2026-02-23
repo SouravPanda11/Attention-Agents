@@ -24,12 +24,10 @@ type ImagePayload = {
       questions: {
         question_id: string;
         option_order: string[];
-        correct_option_id: string;
       }[];
       image_attention: {
         question_id: string;
         option_order: string[];
-        expected_option_id: string;
       };
     };
   };

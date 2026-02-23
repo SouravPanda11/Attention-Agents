@@ -84,5 +84,4 @@ export const textAttentionCheck: TextAttentionCheck = {
     { value: "highlights_only", label: "Only highlights" },
     { value: "not_much", label: "Not much" },
   ],
-  expectedValue: "somewhat",
 };

@@ -14,7 +14,6 @@ export type TextAttentionCheck = {
   label: string;
   type: "choice";
   options: ChoiceOpt[];
-  expectedValue: string;
 };
 
 export type ImageOption = {
@@ -34,6 +33,4 @@ export type ImageAttentionCheck = {
   id: string;
   label: string;
   options: [ImageOption, ImageOption];
-  expectedOptionId: string;
 };
-

@@ -79,6 +79,29 @@ class RunRecord:
     answer_eval: Dict[str, Any]
 
 
+def _derive_metrics_from_summary(summary: Dict[str, Any]) -> Dict[str, Any]:
+    exec_steps = summary.get("exec_steps_in_order") or []
+    answer_order: List[str] = []
+    seen = set()
+    for step in exec_steps:
+        if not isinstance(step, dict):
+            continue
+        key = str(step.get("field_key") or step.get("question_text") or step.get("field_label") or "").strip()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        answer_order.append(key)
+    return {
+        "total_exec_steps": len(exec_steps),
+        "unique_answer_items_touched": len(answer_order),
+        "answer_order": answer_order,
+        "next_click_count": 0,
+        "submit_click_count": 0,
+        "reached_thank_you": None,
+        "submitted": None,
+    }
+
+
 def _collect_runs(root: Path, survey_version: str, mode: str) -> List[RunRecord]:
     mode_dir = root / survey_version / MODEL_NAME / mode
     if not mode_dir.exists():
@@ -86,11 +109,12 @@ def _collect_runs(root: Path, survey_version: str, mode: str) -> List[RunRecord]
 
     records: List[RunRecord] = []
     for run_dir in sorted([p for p in mode_dir.iterdir() if p.is_dir()]):
-        metrics = _load_json(run_dir / "run_metrics.json")
         summary = _load_json(run_dir / "run_summary.json")
-        answer_eval = _load_json(run_dir / "answer_eval.json") or {}
-        if not metrics or not summary:
+        if not summary:
             continue
+
+        metrics = _load_json(run_dir / "run_metrics.json") or _derive_metrics_from_summary(summary)
+        answer_eval = _load_json(run_dir / "answer_eval.json") or {}
         records.append(
             RunRecord(
                 mode=mode,

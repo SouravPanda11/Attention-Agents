@@ -8,6 +8,11 @@ export async function GET() {
   const sid = await getOrCreateSessionId();
   const captchaCode = createCaptchaCode();
   const randomizedImage = getRandomizedImageSurveyV1();
+  const imageAttentionPublic = {
+    id: randomizedImage.image_attention.id,
+    label: randomizedImage.image_attention.label,
+    options: randomizedImage.image_attention.options,
+  };
 
   const response = NextResponse.json({
     session_id: sid,
@@ -29,7 +34,7 @@ export async function GET() {
         label: "Type the code in captcha as shown.",
         display_code: captchaCode,
       },
-      image_attention: randomizedImage.image_attention,
+      image_attention: imageAttentionPublic,
       layout_trace: randomizedImage.layout_trace,
     },
   });
