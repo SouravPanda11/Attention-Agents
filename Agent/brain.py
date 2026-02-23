@@ -364,19 +364,66 @@ class OpenAICompatChatClient:
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
 
+    @staticmethod
+    def _supports_only_user_assistant(response_text: str) -> bool:
+        text = (response_text or "").lower()
+        return (
+            "only user and assistant roles are supported" in text
+            or ("jinja" in text and "roles" in text)
+        )
+
+    @staticmethod
+    def _collapse_system_into_user(messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        system_chunks: List[str] = []
+        passthrough: List[Dict[str, Any]] = []
+        for msg in messages:
+            role = str(msg.get("role") or "").strip().lower()
+            if role == "system":
+                content = msg.get("content")
+                if isinstance(content, str) and content.strip():
+                    system_chunks.append(content.strip())
+                continue
+            passthrough.append(dict(msg))
+
+        if not system_chunks:
+            return [dict(m) for m in messages]
+
+        merged_system = "\n\n".join(system_chunks)
+        prefix = f"[System Instructions]\n{merged_system}\n\n"
+
+        for msg in passthrough:
+            role = str(msg.get("role") or "").strip().lower()
+            if role != "user":
+                continue
+            content = msg.get("content")
+            if isinstance(content, list):
+                msg["content"] = [{"type": "text", "text": prefix}] + content
+            elif isinstance(content, str):
+                msg["content"] = f"{prefix}{content}"
+            else:
+                msg["content"] = prefix
+            return passthrough
+
+        return [{"role": "user", "content": prefix}] + passthrough
+
     async def ainvoke(self, messages: List[Dict[str, Any]], temperature: float = 0.0) -> str:
         url = f"{self.base_url}/chat/completions"
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
-        payload = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": temperature,
-        }
+
+        def _payload_for(msgs: List[Dict[str, Any]]) -> Dict[str, Any]:
+            return {
+                "model": self.model,
+                "messages": msgs,
+                "temperature": temperature,
+            }
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(url, headers=headers, json=payload)
+            response = await client.post(url, headers=headers, json=_payload_for(messages))
+            if response.status_code == 400 and self._supports_only_user_assistant(response.text):
+                fallback_messages = self._collapse_system_into_user(messages)
+                response = await client.post(url, headers=headers, json=_payload_for(fallback_messages))
             response.raise_for_status()
             data = response.json()
 
