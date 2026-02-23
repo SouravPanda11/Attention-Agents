@@ -16,7 +16,7 @@ except Exception:
 # Editable in-code configuration
 # -----------------------------
 RUNS_ROOT = str(Path(__file__).resolve().parent / "runs")
-SURVEY_VERSION = "survey_v1"
+SURVEY_VERSION = "survey_v0"
 MODEL_NAME = get_model_name_for_path()
 # "all" | "completion" | "unconstrained"
 MODE_FILTER = "completion"
