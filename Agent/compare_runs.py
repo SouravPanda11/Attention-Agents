@@ -24,7 +24,7 @@ RUNS_ROOT = str(Path(__file__).resolve().parent / "runs")
 SURVEY_VERSION = os.getenv("SURVEY_VERSION", "").strip()
 MODEL_NAME = get_model_name_for_path()
 # "all" | "completion" | "unconstrained"
-MODE_FILTER = "unconstrained"
+MODE_FILTER = "completion"
 # Optional JSON export path. Keep empty to disable.
 JSON_OUT = ""
 # CSV export path. Keep empty to disable.
