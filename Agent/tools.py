@@ -12,8 +12,16 @@ class TraceLogger:
     def __init__(self, out_dir: Path):
         self.out_dir = out_dir
         self.steps: List[Dict[str, Any]] = []
+        self.run_metadata: Dict[str, Any] = {}
         self._seq = 0
         self.trace_path = self.out_dir / "trace.json"
+
+    def set_run_metadata(self, payload: Dict[str, Any]):
+        if not isinstance(payload, dict):
+            return
+        for key, value in payload.items():
+            if isinstance(key, str) and key:
+                self.run_metadata[key] = value
 
     def log(self, kind: str, payload: Dict[str, Any]):
         self._seq += 1
@@ -72,6 +80,8 @@ class TraceLogger:
             "plan_step_counts": plan_step_counts,
             "exec_steps_in_order": exec_steps,
         }
+        if self.run_metadata:
+            summary.update(self.run_metadata)
         (self.out_dir / "run_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
 
 

@@ -2,9 +2,10 @@ import json
 import csv
 import sqlite3
 import os
+import re
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -36,8 +37,6 @@ VALIDATE_WITH_BACKEND = True
 DB_PATH = str(Path(__file__).resolve().parent.parent / "survey-site" / "data.sqlite")
 # External answer-key file used only during offline evaluation.
 ANSWER_KEY_PATH = str(Path(__file__).resolve().parent.parent / "evaluation" / "answer_key.json")
-# Max allowed distance when matching a run to a submission timestamp.
-MAX_SUBMISSION_MATCH_DELTA_S = 180
 
 TEXT_QUESTION_IDS = [
     "age",
@@ -334,7 +333,6 @@ def _attach_backend_validation(
     records: List[RunRecord],
     db_path: Path,
     survey_version: str,
-    max_match_delta_s: int,
     answer_key: Dict[str, Any],
 ) -> None:
     submissions = _load_backend_submissions(db_path=db_path, survey_version=survey_version)
@@ -360,35 +358,26 @@ def _attach_backend_validation(
             return None
         return _normalized(actual) == _normalized(expected)
 
-    unmatched = list(range(len(submissions)))
-    runs = [r for r in records if r.run_end_utc is not None]
-    runs.sort(key=lambda r: r.run_end_utc or datetime.min.replace(tzinfo=timezone.utc))
+    submissions_by_session: Dict[str, Dict[str, Any]] = {}
+    for sub in submissions:
+        sid = str(sub.get("session_id") or "").strip()
+        if not sid:
+            continue
+        current = submissions_by_session.get(sid)
+        if current is None or sub["ts_utc"] >= current["ts_utc"]:
+            submissions_by_session[sid] = sub
 
-    for rec in runs:
-        run_start = rec.run_start_utc
-        run_end = rec.run_end_utc
-        if run_end is None:
+    for rec in records:
+        run_session_id = str(rec.summary.get("session_id") or "").strip()
+        if not run_session_id:
             continue
-        best_idx = None
-        best_delta = None
-        for idx in unmatched:
-            sub = submissions[idx]
-            sub_ts = sub["ts_utc"]
-            if run_start and sub_ts < (run_start - timedelta(seconds=10)):
-                continue
-            if sub_ts > (run_end + timedelta(seconds=max_match_delta_s)):
-                continue
-            delta = abs((sub_ts - run_end).total_seconds())
-            if best_delta is None or delta < best_delta:
-                best_delta = delta
-                best_idx = idx
-        if best_idx is None:
+        matched = submissions_by_session.get(run_session_id)
+        if matched is None:
             continue
-        matched = submissions[best_idx]
-        unmatched.remove(best_idx)
+
         text_answers = matched.get("text_answers") if isinstance(matched.get("text_answers"), dict) else {}
         image_answers = matched.get("image_answers") if isinstance(matched.get("image_answers"), dict) else {}
-        matched_session = matched["session_id"]
+        matched_session = run_session_id
         issued_captcha = str(captcha_by_session.get(matched_session) or "").strip().upper()
         submitted_captcha = str(matched.get("captcha_input") or "").strip().upper()
 
@@ -435,7 +424,7 @@ def _attach_backend_validation(
         rec.backend_validation = {
             "session_id": matched_session,
             "submission_ts_utc": matched["ts_utc"].isoformat(),
-            "match_delta_s": round(float(best_delta or 0.0), 3),
+            "match_delta_s": None,
             "text_attention_value": matched.get("text_attention_value"),
             "text_attention_ok": text_attention_ok,
             "captcha_input": matched.get("captcha_input"),
@@ -505,13 +494,20 @@ def _derive_metrics_from_summary(summary: Dict[str, Any], run_dir: Path) -> Dict
     }
 
 
+def _run_sort_key(path: Path) -> tuple[int, int, str]:
+    match = re.fullmatch(r"run_(\d+)", path.name)
+    if match:
+        return (0, int(match.group(1)), path.name)
+    return (1, 0, path.name)
+
+
 def _collect_runs(root: Path, survey_version: str, model_name: str, mode: str) -> List[RunRecord]:
     mode_dir = root / survey_version / model_name / mode
     if not mode_dir.exists():
         return []
 
     records: List[RunRecord] = []
-    for run_dir in sorted([p for p in mode_dir.iterdir() if p.is_dir()]):
+    for run_dir in sorted([p for p in mode_dir.iterdir() if p.is_dir()], key=_run_sort_key):
         summary = _load_json(run_dir / "run_summary.json")
         if not summary:
             continue
@@ -961,7 +957,6 @@ def main() -> int:
                 records=records_by_mode[mode],
                 db_path=db_file,
                 survey_version=SURVEY_VERSION,
-                max_match_delta_s=MAX_SUBMISSION_MATCH_DELTA_S,
                 answer_key=answer_key,
             )
 

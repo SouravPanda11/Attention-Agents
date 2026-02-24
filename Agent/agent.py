@@ -53,6 +53,7 @@ def _survey_route_prefix(target_url: str) -> str:
 
 
 SURVEY_ROUTE_PREFIX = _survey_route_prefix(TARGET)
+RUN_DIR_PATTERN = re.compile(r"^run_(\d+)$")
 
 
 def _is_survey_stage(url: str, stage: str) -> bool:
@@ -1317,6 +1318,39 @@ def _build_brain() -> LLMVLMBasedBrain:
     return LLMVLMBasedBrain(config=stack)
 
 
+def _next_run_dir(run_parent: Path) -> Path:
+    next_index = 1
+    if run_parent.exists():
+        for child in run_parent.iterdir():
+            if not child.is_dir():
+                continue
+            match = RUN_DIR_PATTERN.fullmatch(child.name)
+            if not match:
+                continue
+            next_index = max(next_index, int(match.group(1)) + 1)
+
+    out_dir = run_parent / f"run_{next_index}"
+    while out_dir.exists():
+        next_index += 1
+        out_dir = run_parent / f"run_{next_index}"
+    return out_dir
+
+
+async def _read_session_id_cookie(context: Any) -> str:
+    try:
+        cookies = await context.cookies()
+    except Exception:
+        return ""
+
+    for cookie in cookies:
+        if not isinstance(cookie, dict):
+            continue
+        if str(cookie.get("name") or "") != "sid":
+            continue
+        return str(cookie.get("value") or "").strip()
+    return ""
+
+
 async def main(headless: bool = False) -> Path:
     brain = _build_brain()
     prompt_behavior_mode = getattr(brain, "prompt_behavior_mode", "unknown")
@@ -1324,13 +1358,7 @@ async def main(headless: bool = False) -> Path:
     model_name = get_model_name_for_path()
 
     run_parent = Path("runs") / SURVEY_VERSION / model_name / prompt_behavior_mode
-    run_base = f"run_{datetime.now().strftime('%H%M')}_{required_tag}"
-    out_dir = run_parent / run_base
-    if out_dir.exists():
-        suffix = 2
-        while (run_parent / f"{run_base}_{suffix}").exists():
-            suffix += 1
-        out_dir = run_parent / f"{run_base}_{suffix}"
+    out_dir = _next_run_dir(run_parent)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async with async_playwright() as p:
@@ -1369,6 +1397,12 @@ async def main(headless: bool = False) -> Path:
             run_error = exc
             logger.log("run_error", {"error_type": type(exc).__name__, "error": str(exc)})
         finally:
+            session_id = await _read_session_id_cookie(context)
+            if session_id:
+                logger.set_run_metadata({"session_id": session_id})
+                logger.log("session_id", {"session_id": session_id})
+            else:
+                logger.log("session_id_missing", {})
             logger.save()
             try:
                 await context.close()
