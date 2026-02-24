@@ -38,22 +38,10 @@ function fieldStyle(): CSSProperties {
   };
 }
 
-// Toggle required-enforcement mode by uncommenting exactly one line.
-// const ENFORCE_REQUIRED_TEXT_PAGE = true;
-const ENFORCE_REQUIRED_TEXT_PAGE = false;
-
-function isAnswered(value: TextAnswerValue): boolean {
-  if (value === undefined || value === null) return false;
-  if (typeof value === "string") return value.trim().length > 0;
-  if (typeof value === "number") return Number.isFinite(value);
-  return false;
-}
-
 export default function TextSurveyPage() {
   const [payload, setPayload] = useState<TextPayload | null>(null);
   const [answers, setAnswers] = useState<TextState>({});
   const [attentionValue, setAttentionValue] = useState("");
-  const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -79,21 +67,6 @@ export default function TextSurveyPage() {
 
   async function onNext() {
     if (!payload) return;
-    if (ENFORCE_REQUIRED_TEXT_PAGE) {
-      const missingQuestionIds = payload.text.questions
-        .filter((q) => !isAnswered(answers[q.id]))
-        .map((q) => q.id);
-      const missingAttention = attentionValue.trim() === "";
-      if (missingQuestionIds.length > 0 || missingAttention) {
-        setValidationError("Please answer all required questions before moving to the next page.");
-        await logEvent("text_required_block", {
-          missing_question_ids: missingQuestionIds,
-          missing_attention: missingAttention,
-        });
-        return;
-      }
-    }
-    setValidationError("");
     const data = { answers, attention_value: attentionValue };
     sessionStorage.setItem("survey_text_answers", JSON.stringify(data));
     await logEvent("text_page_saved", {
@@ -140,9 +113,8 @@ export default function TextSurveyPage() {
               key={q.id}
               q={q}
               value={answers[q.id]}
-              required={ENFORCE_REQUIRED_TEXT_PAGE}
+              required={false}
               setValue={(v) => {
-                setValidationError("");
                 setAnswers((prev) => ({ ...prev, [q.id]: v }));
               }}
             />
@@ -161,11 +133,9 @@ export default function TextSurveyPage() {
               data-question-id={payload.text.attention.id}
               data-question-label={payload.text.attention.label}
               data-question-type="choice"
-              required={ENFORCE_REQUIRED_TEXT_PAGE}
               style={fieldStyle()}
               value={attentionValue}
               onChange={(e) => {
-                setValidationError("");
                 setAttentionValue(e.target.value);
               }}
             >
@@ -185,17 +155,12 @@ export default function TextSurveyPage() {
               key={q.id}
               q={q}
               value={answers[q.id]}
-              required={ENFORCE_REQUIRED_TEXT_PAGE}
+              required={false}
               setValue={(v) => {
-                setValidationError("");
                 setAnswers((prev) => ({ ...prev, [q.id]: v }));
               }}
             />
           ))}
-
-          {validationError ? (
-            <div style={{ margin: "0 0 12px 0", color: "#b00020", fontWeight: 600 }}>{validationError}</div>
-          ) : null}
 
           <div style={{ textAlign: "center" }}>
             <button

@@ -32,8 +32,23 @@ PLOTS_DIR = str(Path(__file__).resolve().parent / "runs" / SURVEY_VERSION / MODE
 # Backend-validation controls
 VALIDATE_WITH_BACKEND = True
 DB_PATH = str(Path(__file__).resolve().parent.parent / "survey-site" / "data.sqlite")
+# External answer-key file used only during offline evaluation.
+ANSWER_KEY_PATH = str(Path(__file__).resolve().parent.parent / "evaluation" / "answer_key.json")
 # Max allowed distance when matching a run to a submission timestamp.
 MAX_SUBMISSION_MATCH_DELTA_S = 180
+
+TEXT_QUESTION_IDS = [
+    "age",
+    "follow_by_age",
+    "employment_status",
+    "watch_time",
+    "trust_coverage",
+    "country_satisfaction",
+    "future_interest",
+    "favorite_moment",
+    "mood_impact",
+]
+IMAGE_QUESTION_IDS = ["image_q1", "image_q2", "image_q3", "image_q4"]
 
 
 def _load_json(path: Path) -> Optional[Dict[str, Any]]:
@@ -163,6 +178,45 @@ def _parse_iso_utc(value: Any) -> Optional[datetime]:
         return None
 
 
+def _load_answer_key(path: Path) -> Dict[str, Any]:
+    payload = _load_json(path)
+    if not isinstance(payload, dict):
+        return {}
+    surveys = payload.get("surveys")
+    if not isinstance(surveys, dict):
+        return {}
+    return payload
+
+
+def _get_survey_answer_key(answer_key: Dict[str, Any], survey_version: str) -> Dict[str, Any]:
+    surveys = answer_key.get("surveys")
+    if not isinstance(surveys, dict):
+        return {}
+    survey_payload = surveys.get(survey_version)
+    return survey_payload if isinstance(survey_payload, dict) else {}
+
+
+def _parse_json_dict(value: Any) -> Dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    text = str(value or "").strip()
+    if not text:
+        return {}
+    try:
+        parsed = json.loads(text)
+        return parsed if isinstance(parsed, dict) else {}
+    except Exception:
+        return {}
+
+
+def _is_answered_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    return True
+
+
 def _extract_run_window(run_dir: Path) -> tuple[Optional[datetime], Optional[datetime]]:
     trace = _load_json(run_dir / "trace.json")
     if not isinstance(trace, list):
@@ -192,10 +246,11 @@ def _load_backend_submissions(db_path: Path, survey_version: str) -> List[Dict[s
             SELECT
                 s.ts,
                 s.session_id,
-                s.text_attention_ok,
-                s.captcha_ok,
-                s.image_attention_ok,
-                s.overall_ok
+                s.text_answers,
+                s.text_attention_value,
+                s.image_answers,
+                s.captcha_input,
+                s.image_attention_choice
             FROM submissions s
             WHERE EXISTS (
                 SELECT 1
@@ -207,7 +262,7 @@ def _load_backend_submissions(db_path: Path, survey_version: str) -> List[Dict[s
             """,
             (event_type,),
         )
-        for ts, sid, txt_ok, cap_ok, img_ok, overall_ok in cur.fetchall():
+        for ts, sid, text_answers, text_attention_value, image_answers, captcha_input, image_attention_choice in cur.fetchall():
             parsed_ts = _parse_iso_utc(ts)
             if not parsed_ts:
                 continue
@@ -215,10 +270,11 @@ def _load_backend_submissions(db_path: Path, survey_version: str) -> List[Dict[s
                 {
                     "ts_utc": parsed_ts,
                     "session_id": str(sid or ""),
-                    "text_attention_ok": bool(int(txt_ok)),
-                    "captcha_ok": bool(int(cap_ok)),
-                    "image_attention_ok": bool(int(img_ok)),
-                    "overall_ok": bool(int(overall_ok)),
+                    "text_answers": _parse_json_dict(text_answers),
+                    "text_attention_value": str(text_attention_value or ""),
+                    "image_answers": _parse_json_dict(image_answers),
+                    "captcha_input": str(captcha_input or ""),
+                    "image_attention_choice": str(image_attention_choice or ""),
                 }
             )
     except Exception:
@@ -231,15 +287,76 @@ def _load_backend_submissions(db_path: Path, survey_version: str) -> List[Dict[s
     return rows
 
 
+def _load_captcha_by_session(db_path: Path, survey_version: str) -> Dict[str, str]:
+    if not db_path.exists():
+        return {}
+    event_type = "captcha_issued_v1" if survey_version == "survey_v1" else "captcha_issued"
+    by_session: Dict[str, tuple[datetime, str]] = {}
+    try:
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT ts, session_id, payload
+            FROM events
+            WHERE event_type = ?
+            ORDER BY ts ASC
+            """,
+            (event_type,),
+        )
+        for ts, sid, payload in cur.fetchall():
+            sid_str = str(sid or "").strip()
+            if not sid_str:
+                continue
+            ts_utc = _parse_iso_utc(ts)
+            if ts_utc is None:
+                continue
+            parsed_payload = _parse_json_dict(payload)
+            captcha_code = str(parsed_payload.get("captcha_code") or "").strip().upper()
+            if not captcha_code:
+                continue
+            current = by_session.get(sid_str)
+            if current is None or ts_utc >= current[0]:
+                by_session[sid_str] = (ts_utc, captcha_code)
+    except Exception:
+        return {}
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+    return {sid: code for sid, (_, code) in by_session.items()}
+
+
 def _attach_backend_validation(
     records: List[RunRecord],
     db_path: Path,
     survey_version: str,
     max_match_delta_s: int,
+    answer_key: Dict[str, Any],
 ) -> None:
     submissions = _load_backend_submissions(db_path=db_path, survey_version=survey_version)
     if not submissions:
         return
+
+    survey_key = _get_survey_answer_key(answer_key=answer_key, survey_version=survey_version)
+    text_attention_expected = str(
+        ((survey_key.get("text_attention") or {}).get("expected_value") or "")
+    ).strip()
+    image_attention_expected = str(
+        ((survey_key.get("image_attention") or {}).get("expected_option_id") or "")
+    ).strip()
+    image_expected = (survey_key.get("image_questions") or {})
+    image_expected = image_expected if isinstance(image_expected, dict) else {}
+    captcha_by_session = _load_captcha_by_session(db_path=db_path, survey_version=survey_version)
+
+    def _normalized(value: Any) -> str:
+        return str(value or "").strip().lower()
+
+    def _eq_expected(actual: Any, expected: str) -> Optional[bool]:
+        if not expected:
+            return None
+        return _normalized(actual) == _normalized(expected)
 
     unmatched = list(range(len(submissions)))
     runs = [r for r in records if r.run_end_utc is not None]
@@ -267,37 +384,122 @@ def _attach_backend_validation(
             continue
         matched = submissions[best_idx]
         unmatched.remove(best_idx)
+        text_answers = matched.get("text_answers") if isinstance(matched.get("text_answers"), dict) else {}
+        image_answers = matched.get("image_answers") if isinstance(matched.get("image_answers"), dict) else {}
+        matched_session = matched["session_id"]
+        issued_captcha = str(captcha_by_session.get(matched_session) or "").strip().upper()
+        submitted_captcha = str(matched.get("captcha_input") or "").strip().upper()
+
+        text_attention_ok = _eq_expected(matched.get("text_attention_value"), text_attention_expected)
+        image_attention_ok = _eq_expected(matched.get("image_attention_choice"), image_attention_expected)
+        captcha_ok: Optional[bool] = None
+        if issued_captcha:
+            captcha_ok = submitted_captcha == issued_captcha
+
+        text_answered_count = sum(1 for qid in TEXT_QUESTION_IDS if _is_answered_value(text_answers.get(qid)))
+        text_total_count = len(TEXT_QUESTION_IDS)
+
+        image_answered_count = sum(1 for qid in IMAGE_QUESTION_IDS if _is_answered_value(image_answers.get(qid)))
+        image_total_count = len(IMAGE_QUESTION_IDS)
+        image_correct_count = sum(
+            1
+            for qid, expected in image_expected.items()
+            if str(image_answers.get(qid) or "").strip() == expected
+        )
+        image_known_count = len(image_expected)
+        image_accuracy_known = (image_correct_count / image_known_count) if image_known_count else None
+        image_questions_all_correct: Optional[bool]
+        if image_known_count <= 0:
+            image_questions_all_correct = None
+        else:
+            image_questions_all_correct = image_correct_count == image_known_count
+
+        overall_ok: Optional[bool]
+        if (
+            text_attention_ok is None
+            or image_attention_ok is None
+            or captcha_ok is None
+            or image_questions_all_correct is None
+        ):
+            overall_ok = None
+        else:
+            overall_ok = bool(
+                text_attention_ok
+                and image_attention_ok
+                and captcha_ok
+                and image_questions_all_correct
+            )
+
         rec.backend_validation = {
-            "session_id": matched["session_id"],
+            "session_id": matched_session,
             "submission_ts_utc": matched["ts_utc"].isoformat(),
             "match_delta_s": round(float(best_delta or 0.0), 3),
-            "text_attention_ok": matched["text_attention_ok"],
-            "captcha_ok": matched["captcha_ok"],
-            "image_attention_ok": matched["image_attention_ok"],
-            "overall_ok": matched["overall_ok"],
+            "text_attention_value": matched.get("text_attention_value"),
+            "text_attention_ok": text_attention_ok,
+            "captcha_input": matched.get("captcha_input"),
+            "captcha_expected": issued_captcha,
+            "captcha_ok": captcha_ok,
+            "image_attention_choice": matched.get("image_attention_choice"),
+            "image_attention_ok": image_attention_ok,
+            "overall_ok": overall_ok,
+            "text_completion_answered": text_answered_count,
+            "text_completion_total": text_total_count,
+            "text_completion_rate": (text_answered_count / text_total_count) if text_total_count else None,
+            "image_completion_answered": image_answered_count,
+            "image_completion_total": image_total_count,
+            "image_completion_rate": (image_answered_count / image_total_count) if image_total_count else None,
+            "image_accuracy_correct": image_correct_count,
+            "image_accuracy_known_total": image_known_count,
+            "image_accuracy_rate": image_accuracy_known,
+            "image_questions_all_correct": image_questions_all_correct,
         }
 
 
-def _derive_metrics_from_summary(summary: Dict[str, Any]) -> Dict[str, Any]:
+def _derive_metrics_from_summary(summary: Dict[str, Any], run_dir: Path) -> Dict[str, Any]:
     exec_steps = summary.get("exec_steps_in_order") or []
     answer_order: List[str] = []
     seen = set()
+    next_click_count = 0
+    submit_click_count = 0
     for step in exec_steps:
         if not isinstance(step, dict):
             continue
+        if str(step.get("tool") or "") == "click":
+            selector = str(step.get("selector") or "").lower()
+            if "next" in selector:
+                next_click_count += 1
+            if "submit" in selector:
+                submit_click_count += 1
         key = str(step.get("field_key") or step.get("question_text") or step.get("field_label") or "").strip()
         if not key or key in seen:
             continue
         seen.add(key)
         answer_order.append(key)
+
+    reached_thank_you = None
+    submitted = None
+    trace = _load_json(run_dir / "trace.json")
+    if isinstance(trace, list):
+        urls: List[str] = []
+        for event in trace:
+            if not isinstance(event, dict):
+                continue
+            for k in ("url", "new_url", "current_url"):
+                val = event.get(k)
+                if isinstance(val, str) and val:
+                    urls.append(val)
+        lowered = [u.lower() for u in urls]
+        reached_thank_you = any("/thank-you" in u for u in lowered)
+        reached_done = any("/done" in u for u in lowered)
+        submitted = reached_done
     return {
         "total_exec_steps": len(exec_steps),
         "unique_answer_items_touched": len(answer_order),
         "answer_order": answer_order,
-        "next_click_count": 0,
-        "submit_click_count": 0,
-        "reached_thank_you": None,
-        "submitted": None,
+        "next_click_count": next_click_count,
+        "submit_click_count": submit_click_count,
+        "reached_thank_you": reached_thank_you,
+        "submitted": submitted,
     }
 
 
@@ -312,7 +514,7 @@ def _collect_runs(root: Path, survey_version: str, model_name: str, mode: str) -
         if not summary:
             continue
 
-        metrics = _load_json(run_dir / "run_metrics.json") or _derive_metrics_from_summary(summary)
+        metrics = _load_json(run_dir / "run_metrics.json") or _derive_metrics_from_summary(summary, run_dir=run_dir)
         answer_eval = _load_json(run_dir / "answer_eval.json") or {}
         run_start_utc, run_end_utc = _extract_run_window(run_dir)
         records.append(
@@ -341,10 +543,32 @@ def _image_acc_text(answer_eval: Dict[str, Any]) -> str:
     return f"{correct}/{known}({float(acc):.2f})"
 
 
+def _image_acc_text_from_backend(backend: Dict[str, Any]) -> str:
+    known = int(backend.get("image_accuracy_known_total") or 0)
+    correct = int(backend.get("image_accuracy_correct") or 0)
+    acc = backend.get("image_accuracy_rate")
+    if known <= 0 and acc is None:
+        return "-"
+    if not isinstance(acc, (int, float)):
+        return f"{correct}/{known}"
+    return f"{correct}/{known}({float(acc):.2f})"
+
+
 def _completion_text(section: Dict[str, Any]) -> str:
     answered = int(section.get("answered_count") or 0)
     total = int(section.get("total_count") or 0)
     rate = section.get("completion_rate")
+    if total <= 0:
+        return "-"
+    if not isinstance(rate, (int, float)):
+        return f"{answered}/{total}"
+    return f"{answered}/{total}({float(rate):.2f})"
+
+
+def _completion_text_from_backend(backend: Dict[str, Any], prefix: str) -> str:
+    answered = int(backend.get(f"{prefix}_completion_answered") or 0)
+    total = int(backend.get(f"{prefix}_completion_total") or 0)
+    rate = backend.get(f"{prefix}_completion_rate")
     if total <= 0:
         return "-"
     if not isinstance(rate, (int, float)):
@@ -371,6 +595,7 @@ def _print_mode_report(mode: str, records: List[RunRecord]):
         "text_attn",
         "img_comp",
         "img_acc",
+        "img_all",
         "img_attn",
         "captcha",
         "overall",
@@ -408,20 +633,31 @@ def _print_mode_report(mode: str, records: List[RunRecord]):
         if captcha_ok is None:
             captcha_ok = ((rec.answer_eval.get("captcha") or {}).get("is_correct"))
         overall_ok = backend.get("overall_ok")
+        image_all_ok = backend.get("image_questions_all_correct")
         submitted_flag = rec.metrics.get("submitted")
-        if submitted_flag is None and isinstance(overall_ok, bool):
+        if backend.get("session_id"):
+            submitted_flag = True
+        elif submitted_flag is None and isinstance(overall_ok, bool):
             submitted_flag = True
         match_delta = backend.get("match_delta_s")
         match_text = "-" if not isinstance(match_delta, (int, float)) else f"{float(match_delta):.1f}"
         text_comp = _completion_text(rec.answer_eval.get("text_page_completion") or {})
         image_comp = _completion_text(rec.answer_eval.get("image_page_completion") or {})
+        if text_comp == "-":
+            text_comp = _completion_text_from_backend(backend, "text")
+        if image_comp == "-":
+            image_comp = _completion_text_from_backend(backend, "image")
+        img_acc_text = _image_acc_text(rec.answer_eval)
+        if img_acc_text == "-":
+            img_acc_text = _image_acc_text_from_backend(backend)
 
         row = (
             rec.run_name,
             text_comp,
             _tri(txt_attn_ok),
             image_comp,
-            _image_acc_text(rec.answer_eval),
+            img_acc_text,
+            _tri(image_all_ok),
             _tri(img_attn_ok),
             _tri(captcha_ok),
             _tri(overall_ok),
@@ -489,28 +725,55 @@ def _build_csv_rows(records_by_mode: Dict[str, List[RunRecord]]) -> List[Dict[st
             overall_ok = backend.get("overall_ok")
             text_comp = rec.answer_eval.get("text_page_completion") or {}
             image_comp = rec.answer_eval.get("image_page_completion") or {}
+            text_answered = int(text_comp.get("answered_count") or 0)
+            text_total = int(text_comp.get("total_count") or 0)
+            text_rate = text_comp.get("completion_rate")
+            if text_total <= 0:
+                text_answered = int(backend.get("text_completion_answered") or 0)
+                text_total = int(backend.get("text_completion_total") or 0)
+                text_rate = backend.get("text_completion_rate")
+
+            image_answered = int(image_comp.get("answered_count") or 0)
+            image_total = int(image_comp.get("total_count") or 0)
+            image_rate = image_comp.get("completion_rate")
+            if image_total <= 0:
+                image_answered = int(backend.get("image_completion_answered") or 0)
+                image_total = int(backend.get("image_completion_total") or 0)
+                image_rate = backend.get("image_completion_rate")
+
             img_known = int(rec.answer_eval.get("image_known_count") or 0)
             img_correct = int(rec.answer_eval.get("image_correct_count") or 0)
+            img_rate = rec.answer_eval.get("image_accuracy_known")
+            if img_known <= 0:
+                img_known = int(backend.get("image_accuracy_known_total") or 0)
+                img_correct = int(backend.get("image_accuracy_correct") or 0)
+                img_rate = backend.get("image_accuracy_rate")
+            submitted_flag = rec.metrics.get("submitted")
+            if backend.get("session_id"):
+                submitted_flag = True
+            elif submitted_flag is None and isinstance(overall_ok, bool):
+                submitted_flag = True
             rows.append(
                 {
                     "mode": mode,
                     "run_name": rec.run_name,
                     "run_dir": str(rec.run_dir),
-                    "text_completion_answered": int(text_comp.get("answered_count") or 0),
-                    "text_completion_total": int(text_comp.get("total_count") or 0),
-                    "text_completion_rate": text_comp.get("completion_rate"),
+                    "text_completion_answered": text_answered,
+                    "text_completion_total": text_total,
+                    "text_completion_rate": text_rate,
                     "text_attention_ok": txt_attn_ok,
-                    "image_completion_answered": int(image_comp.get("answered_count") or 0),
-                    "image_completion_total": int(image_comp.get("total_count") or 0),
-                    "image_completion_rate": image_comp.get("completion_rate"),
+                    "image_completion_answered": image_answered,
+                    "image_completion_total": image_total,
+                    "image_completion_rate": image_rate,
                     "image_accuracy_correct": img_correct,
                     "image_accuracy_known_total": img_known,
-                    "image_accuracy_rate": rec.answer_eval.get("image_accuracy_known"),
+                    "image_accuracy_rate": img_rate,
+                    "image_questions_all_correct": backend.get("image_questions_all_correct"),
                     "image_attention_ok": img_attn_ok,
                     "captcha_ok": captcha_ok,
                     "overall_ok": overall_ok,
                     "reached_thank_you": rec.metrics.get("reached_thank_you"),
-                    "submitted": rec.metrics.get("submitted"),
+                    "submitted": submitted_flag,
                     "validation_session_id": backend.get("session_id"),
                     "validation_submission_ts_utc": backend.get("submission_ts_utc"),
                     "validation_match_delta_s": backend.get("match_delta_s"),
@@ -542,6 +805,7 @@ def _write_csv(path: Path, rows: List[Dict[str, Any]]) -> None:
         "image_accuracy_correct",
         "image_accuracy_known_total",
         "image_accuracy_rate",
+        "image_questions_all_correct",
         "image_attention_ok",
         "captcha_ok",
         "overall_ok",
@@ -578,6 +842,7 @@ def _plot_mode_table(mode: str, records: List[RunRecord], out_dir: Path) -> Opti
         "text_attention_ok",
         "image_completion",
         "image_accuracy",
+        "image_all_correct",
         "image_attention_ok",
         "captcha_ok",
         "reached_thank_you",
@@ -586,11 +851,19 @@ def _plot_mode_table(mode: str, records: List[RunRecord], out_dir: Path) -> Opti
     row_labels = [r.run_name for r in records]
     rows: List[List[str]] = []
     for rec in records:
+        backend = rec.backend_validation or {}
         img_acc = rec.answer_eval.get("image_accuracy_known")
         img_acc_text = "-" if not isinstance(img_acc, (int, float)) else f"{float(img_acc):.2f}"
+        if img_acc_text == "-":
+            backend_img_acc = backend.get("image_accuracy_rate")
+            if isinstance(backend_img_acc, (int, float)):
+                img_acc_text = f"{float(backend_img_acc):.2f}"
         text_comp = _completion_text(rec.answer_eval.get("text_page_completion") or {})
         image_comp = _completion_text(rec.answer_eval.get("image_page_completion") or {})
-        backend = rec.backend_validation or {}
+        if text_comp == "-":
+            text_comp = _completion_text_from_backend(backend, "text")
+        if image_comp == "-":
+            image_comp = _completion_text_from_backend(backend, "image")
         img_attn_ok = backend.get("image_attention_ok")
         if img_attn_ok is None:
             img_attn_ok = (rec.answer_eval.get("image_attention") or {}).get("is_correct")
@@ -602,7 +875,9 @@ def _plot_mode_table(mode: str, records: List[RunRecord], out_dir: Path) -> Opti
             captcha_ok = (rec.answer_eval.get("captcha") or {}).get("is_correct")
         reached = rec.metrics.get("reached_thank_you")
         submitted = rec.metrics.get("submitted")
-        if submitted is None and backend.get("overall_ok") is not None:
+        if backend.get("session_id"):
+            submitted = True
+        elif submitted is None and backend.get("overall_ok") is not None:
             submitted = True
         rows.append(
             [
@@ -610,6 +885,7 @@ def _plot_mode_table(mode: str, records: List[RunRecord], out_dir: Path) -> Opti
                 _tri(txt_attn_ok),
                 image_comp,
                 img_acc_text,
+                _tri(backend.get("image_questions_all_correct")),
                 _tri(img_attn_ok),
                 _tri(captcha_ok),
                 _tri(reached),
@@ -662,6 +938,7 @@ def main() -> int:
         )
         for mode in modes
     }
+    answer_key = _load_answer_key(Path(ANSWER_KEY_PATH))
     if VALIDATE_WITH_BACKEND:
         db_file = Path(DB_PATH)
         for mode in modes:
@@ -670,6 +947,7 @@ def main() -> int:
                 db_path=db_file,
                 survey_version=SURVEY_VERSION,
                 max_match_delta_s=MAX_SUBMISSION_MATCH_DELTA_S,
+                answer_key=answer_key,
             )
 
     print(f"runs_root={root}")
@@ -678,6 +956,9 @@ def main() -> int:
     print(f"model_name_resolved={resolved_model_name}")
     if VALIDATE_WITH_BACKEND:
         print(f"backend_validation_db={Path(DB_PATH)}")
+        print(f"answer_key_path={Path(ANSWER_KEY_PATH)}")
+        if not answer_key:
+            print("warning: answer key not found/invalid; attention and accuracy checks may be incomplete.")
     if resolved_model_name != MODEL_NAME:
         print("note: configured model has no valid runs for this survey_version/mode; using resolved model folder.")
     if WRITE_PLOTS and plt is None:

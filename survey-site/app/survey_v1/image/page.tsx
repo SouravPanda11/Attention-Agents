@@ -61,10 +61,6 @@ function stripLeadingNumber(label: string): string {
   return label.replace(/^\d+\)\s*/, "");
 }
 
-// Toggle required-enforcement mode by uncommenting exactly one line.
-// const ENFORCE_REQUIRED_IMAGE_PAGE = true;
-const ENFORCE_REQUIRED_IMAGE_PAGE = false;
-
 export default function ImageSurveyPage() {
   const [payload, setPayload] = useState<ImagePayload | null>(null);
   const [answers, setAnswers] = useState<ImageState>({});
@@ -72,7 +68,6 @@ export default function ImageSurveyPage() {
   const [imageAttentionChoice, setImageAttentionChoice] = useState("");
   const [missingTextFlow, setMissingTextFlow] = useState(false);
   const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
-  const [validationError, setValidationError] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -125,23 +120,6 @@ export default function ImageSurveyPage() {
 
   async function onNext() {
     if (!payload) return;
-    if (ENFORCE_REQUIRED_IMAGE_PAGE) {
-      const missingQuestionIds = payload.image.questions
-        .filter((q) => !answers[q.id])
-        .map((q) => q.id);
-      const missingCaptcha = captchaInput.trim() === "";
-      const missingAttention = imageAttentionChoice.trim() === "";
-      if (missingQuestionIds.length > 0 || missingCaptcha || missingAttention) {
-        setValidationError("Please complete all required items before moving to the next page.");
-        await logEvent("image_required_block", {
-          missing_question_ids: missingQuestionIds,
-          missing_captcha: missingCaptcha,
-          missing_image_attention: missingAttention,
-        });
-        return;
-      }
-    }
-    setValidationError("");
     const data = {
       answers,
       captcha_input: captchaInput,
@@ -223,10 +201,8 @@ export default function ImageSurveyPage() {
                               type="radio"
                               name={q.id}
                               value={opt.id}
-                              required={ENFORCE_REQUIRED_IMAGE_PAGE && opt.id === q.options[0].id}
                               checked={isSelected}
                               onChange={() => {
-                                setValidationError("");
                                 setAnswers((prev) => ({ ...prev, [q.id]: opt.id }));
                               }}
                               style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 1, height: 1 }}
@@ -286,10 +262,8 @@ export default function ImageSurveyPage() {
                   </div>
                   <input
                     type="text"
-                    required={ENFORCE_REQUIRED_IMAGE_PAGE}
                     value={captchaInput}
                     onChange={(e) => {
-                      setValidationError("");
                       setCaptchaInput(e.target.value);
                     }}
                     placeholder="Type code exactly"
@@ -333,13 +307,8 @@ export default function ImageSurveyPage() {
                             type="radio"
                             name={payload.image.image_attention.id}
                             value={opt.id}
-                            required={
-                              ENFORCE_REQUIRED_IMAGE_PAGE &&
-                              opt.id === payload.image.image_attention.options[0].id
-                            }
                             checked={isSelected}
                             onChange={() => {
-                              setValidationError("");
                               setImageAttentionChoice(opt.id);
                             }}
                             style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 1, height: 1 }}
@@ -380,10 +349,6 @@ export default function ImageSurveyPage() {
               )}
             </div>
           ))}
-
-          {validationError ? (
-            <div style={{ margin: "0 0 12px 0", color: "#b00020", fontWeight: 600 }}>{validationError}</div>
-          ) : null}
 
           <div style={{ textAlign: "center" }}>
             <button

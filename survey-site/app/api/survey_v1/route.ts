@@ -3,6 +3,7 @@ import { getOrCreateSessionId } from "@/lib/session";
 import { createCaptchaCode } from "@/lib/survey";
 import { getTextSurveyQuestions, textAttentionCheck } from "@/lib/surveys/textSurvey";
 import { getRandomizedImageSurveyV1 } from "@/lib/surveys/imageSurvey_v1";
+import { db } from "@/lib/db";
 
 export async function GET() {
   const sid = await getOrCreateSessionId();
@@ -46,6 +47,22 @@ export async function GET() {
     path: "/",
     maxAge: 60 * 30,
   });
+
+  db.prepare("INSERT INTO events (ts, session_id, event_type, payload) VALUES (?, ?, ?, ?)").run(
+    new Date().toISOString(),
+    sid,
+    "captcha_issued_v1",
+    JSON.stringify({ captcha_code: captchaCode, survey_version: "survey_v1" })
+  );
+  db.prepare("INSERT INTO events (ts, session_id, event_type, payload) VALUES (?, ?, ?, ?)").run(
+    new Date().toISOString(),
+    sid,
+    "image_layout_issued_v1",
+    JSON.stringify({
+      survey_version: "survey_v1",
+      layout_trace: randomizedImage.layout_trace,
+    })
+  );
 
   return response;
 }

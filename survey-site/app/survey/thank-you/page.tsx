@@ -65,15 +65,12 @@ export default function ThankYouPage() {
 
       const json = (await res.json()) as SubmitResponse;
       await logEvent("final_submission_response", { ok: json.ok });
-
-      if (json.ok) {
-        sessionStorage.removeItem("survey_text_answers");
-        sessionStorage.removeItem("survey_image_answers");
-        await logEvent("thank_you_submit_success", {
-          redirect_to: "/survey/done",
-        });
-        window.location.href = "/survey/done";
-      }
+      sessionStorage.removeItem("survey_text_answers");
+      sessionStorage.removeItem("survey_image_answers");
+      await logEvent("thank_you_submit_success", {
+        redirect_to: "/survey/done",
+      });
+      window.location.href = "/survey/done";
     } finally {
       setSubmitting(false);
     }

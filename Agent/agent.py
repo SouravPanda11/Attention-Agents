@@ -1248,7 +1248,11 @@ async def node_act(state: AgentState, config) -> AgentState:
                     ctx.logger.log("dom_snapshot", {"path": str(act_dom)})
                 await tool_screenshot(ctx.page, ctx.logger, ctx.out_dir / f"shot_{state.get('step_idx', 0)}_act_{i+1}.png")
                 await _log_page_marker(ctx.page, ctx.logger, int(state.get("step_idx", 0)), f"act_{i+1}")
-                return {**state, "url": ctx.page.url, "last_exec_ts": time.monotonic()}
+                return {
+                    **state,
+                    "url": ctx.page.url,
+                    "last_exec_ts": time.monotonic(),
+                }
 
         elif tool == "check":
             await tool_check(ctx.page, ctx.logger, selector)
