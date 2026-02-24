@@ -1,0 +1,776 @@
+[
+  {
+    "seq": 1,
+    "ts_utc": "2026-02-24T15:11:45.520584+00:00",
+    "kind": "run_context",
+    "survey_version": "survey_v0",
+    "model_name": "qwen2.5-7b-instruct-1m",
+    "prompt_behavior_mode": "completion",
+    "planner_mode": "llm_only",
+    "required_tag": "NRT",
+    "target": "http://localhost:3000/survey",
+    "headless": true
+  },
+  {
+    "seq": 2,
+    "ts_utc": "2026-02-24T15:11:46.367081+00:00",
+    "kind": "goto",
+    "url": "http://localhost:3000/survey",
+    "current_url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 3,
+    "ts_utc": "2026-02-24T15:11:46.409473+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 4,
+    "ts_utc": "2026-02-24T15:11:46.432990+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 5,
+    "ts_utc": "2026-02-24T15:11:46.556130+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\shot_1.png",
+    "full_page": true
+  },
+  {
+    "seq": 6,
+    "ts_utc": "2026-02-24T15:11:46.559123+00:00",
+    "kind": "page_marker",
+    "step_idx": 1,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 7,
+    "ts_utc": "2026-02-24T15:11:46.566129+00:00",
+    "kind": "action_space",
+    "step_idx": 1,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_1.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 8,
+    "ts_utc": "2026-02-24T15:11:46.567123+00:00",
+    "kind": "page_changed",
+    "old_url": "http://localhost:3000/survey",
+    "new_url": "http://localhost:3000/survey/text",
+    "reset_plan_feedback": true
+  },
+  {
+    "seq": 9,
+    "ts_utc": "2026-02-24T15:11:46.567123+00:00",
+    "kind": "observe_state",
+    "step_idx": 1,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 10,
+    "ts_utc": "2026-02-24T15:11:46.568124+00:00",
+    "kind": "plan_input",
+    "step_idx": 1,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_1.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 11,
+    "ts_utc": "2026-02-24T15:11:49.386465+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 0,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":3.0},\n    {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Agree\"},\n    {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7.0},\n    {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"very_likely\"},\n    {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"Watching the gold medal ceremony.\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 12,
+    "ts_utc": "2026-02-24T15:11:49.386465+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact', 'age', 'employment_status', 'attention_text_mid']"
+  },
+  {
+    "seq": 13,
+    "ts_utc": "2026-02-24T15:11:51.426269+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 1,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"Agree\"},\n    {\"tool\":\"fill\",\"key\":\"age\",\"value\":35},\n    {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"student\"},\n    {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"somewhat\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":4.0},\n    {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7.5},\n    {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"very_likely\"},\n    {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"Watching the gold medal match between USA and Canada in ice hockey.\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 14,
+    "ts_utc": "2026-02-24T15:11:51.426269+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'follow_by_age']"
+  },
+  {
+    "seq": 15,
+    "ts_utc": "2026-02-24T15:11:52.934657+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 2,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"Agree\"},\n    {\"tool\":\"fill\",\"key\":\"age\",\"value\":35},\n    {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n    {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Neutral\"},\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":4},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 16,
+    "ts_utc": "2026-02-24T15:11:52.934657+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 17,
+    "ts_utc": "2026-02-24T15:11:52.949066+00:00",
+    "kind": "plan_fallback",
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 18,
+    "ts_utc": "2026-02-24T15:11:52.949066+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 19,
+    "ts_utc": "2026-02-24T15:11:52.949066+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 20,
+    "ts_utc": "2026-02-24T15:11:52.956458+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 21,
+    "ts_utc": "2026-02-24T15:11:53.028956+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\shot_2.png",
+    "full_page": true
+  },
+  {
+    "seq": 22,
+    "ts_utc": "2026-02-24T15:11:53.030965+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 23,
+    "ts_utc": "2026-02-24T15:11:53.041963+00:00",
+    "kind": "action_space",
+    "step_idx": 2,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_2.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 24,
+    "ts_utc": "2026-02-24T15:11:53.041963+00:00",
+    "kind": "observe_state",
+    "step_idx": 2,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 25,
+    "ts_utc": "2026-02-24T15:11:53.042965+00:00",
+    "kind": "plan_input",
+    "step_idx": 2,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_2.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 26,
+    "ts_utc": "2026-02-24T15:11:53.042965+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact', 'age', 'employment_status', 'attention_text_mid']",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'follow_by_age']",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+    ]
+  },
+  {
+    "seq": 27,
+    "ts_utc": "2026-02-24T15:11:55.435542+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Agree\"},\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"fill\",\"key\":\"age\",\"value\":30},\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":5.0},\n    {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"Somewhat\"},\n    {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7.0},\n    {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"Likely\"},\n    {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"Watching the gold medal race in freestyle skiing.\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 28,
+    "ts_utc": "2026-02-24T15:11:55.435542+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 29,
+    "ts_utc": "2026-02-24T15:11:57.006053+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"trust_coverage\",\"value\":\"Neutral\"},\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"somewhat\"},\n    {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7},\n    {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"likely\"},\n    {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"Watching the gold medal ceremony.\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 30,
+    "ts_utc": "2026-02-24T15:11:57.006053+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact', 'age', 'employment_status', 'watch_time']"
+  },
+  {
+    "seq": 31,
+    "ts_utc": "2026-02-24T15:11:58.666769+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"select\", \"key\": \"attention_text_mid\", \"value\": \"somewhat\"},\n    {\"tool\": \"set_range\", \"key\": \"country_satisfaction\", \"value\": 7.0},\n    {\"tool\": \"select\", \"key\": \"future_interest\", \"value\": \"likely\"},\n    {\"tool\": \"fill\", \"key\": \"favorite_moment\", \"value\": \"The moment when the athlete finally won the gold medal.\"},\n    {\"tool\": \"check\", \"key\": \"mood_impact\", \"value\": \"Agree\"}\n]"
+  },
+  {
+    "seq": 32,
+    "ts_utc": "2026-02-24T15:11:58.666769+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'age', 'follow_by_age', 'employment_status', 'watch_time']"
+  },
+  {
+    "seq": 33,
+    "ts_utc": "2026-02-24T15:11:58.666769+00:00",
+    "kind": "plan_fallback",
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'age', 'follow_by_age', 'employment_status', 'watch_time']"
+  },
+  {
+    "seq": 34,
+    "ts_utc": "2026-02-24T15:11:58.666769+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 35,
+    "ts_utc": "2026-02-24T15:11:58.674855+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 36,
+    "ts_utc": "2026-02-24T15:11:58.674855+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 37,
+    "ts_utc": "2026-02-24T15:11:58.744633+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\shot_3.png",
+    "full_page": true
+  },
+  {
+    "seq": 38,
+    "ts_utc": "2026-02-24T15:11:58.746634+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 39,
+    "ts_utc": "2026-02-24T15:11:58.749633+00:00",
+    "kind": "action_space",
+    "step_idx": 3,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_3.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 40,
+    "ts_utc": "2026-02-24T15:11:58.749633+00:00",
+    "kind": "observe_state",
+    "step_idx": 3,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 41,
+    "ts_utc": "2026-02-24T15:11:58.750633+00:00",
+    "kind": "plan_input",
+    "step_idx": 3,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_3.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 42,
+    "ts_utc": "2026-02-24T15:11:58.751642+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact', 'age', 'employment_status', 'watch_time']",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'age', 'follow_by_age', 'employment_status', 'watch_time']",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+    ]
+  },
+  {
+    "seq": 43,
+    "ts_utc": "2026-02-24T15:12:00.574350+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"check\", \"key\": \"mood_impact\", \"value\": \"Somewhat\"},\n    {\"tool\": \"fill\", \"key\": \"age\", \"value\": 25},\n    {\"tool\": \"select\", \"key\": \"follow_by_age\", \"value\": \"very_closely\"},\n    {\"tool\": \"select\", \"key\": \"employment_status\", \"value\": \"full_time\"},\n    {\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": 3.5},\n    {\"tool\": \"check\", \"key\": \"trust_coverage\", \"value\": \"Agree\"}\n]"
+  },
+  {
+    "seq": 44,
+    "ts_utc": "2026-02-24T15:12:00.577609+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 45,
+    "ts_utc": "2026-02-24T15:12:01.855234+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"select\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"fill\",\"key\":\"age\",\"value\":30},\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":5.5}\n]"
+  },
+  {
+    "seq": 46,
+    "ts_utc": "2026-02-24T15:12:01.855234+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 47,
+    "ts_utc": "2026-02-24T15:12:04.318606+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Neutral\"},\n    {\"tool\":\"fill\",\"key\":\"age\",\"value\":25},\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":3.0},\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat\"},\n    {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"somewhat\"},\n    {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7.5},\n    {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"likely\"},\n    {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"Winning the gold medal in the 100m sprint.\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 48,
+    "ts_utc": "2026-02-24T15:12:04.320613+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 49,
+    "ts_utc": "2026-02-24T15:12:04.320613+00:00",
+    "kind": "plan_fallback",
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 50,
+    "ts_utc": "2026-02-24T15:12:04.320613+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 51,
+    "ts_utc": "2026-02-24T15:12:04.324920+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 52,
+    "ts_utc": "2026-02-24T15:12:04.329952+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 53,
+    "ts_utc": "2026-02-24T15:12:04.395134+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\shot_4.png",
+    "full_page": true
+  },
+  {
+    "seq": 54,
+    "ts_utc": "2026-02-24T15:12:04.398125+00:00",
+    "kind": "page_marker",
+    "step_idx": 4,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 55,
+    "ts_utc": "2026-02-24T15:12:04.400133+00:00",
+    "kind": "action_space",
+    "step_idx": 4,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_4.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 56,
+    "ts_utc": "2026-02-24T15:12:04.401127+00:00",
+    "kind": "observe_state",
+    "step_idx": 4,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 57,
+    "ts_utc": "2026-02-24T15:12:04.402126+00:00",
+    "kind": "plan_input",
+    "step_idx": 4,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_4.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 58,
+    "ts_utc": "2026-02-24T15:12:04.402126+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat agree'}"
+    ]
+  },
+  {
+    "seq": 59,
+    "ts_utc": "2026-02-24T15:12:06.648079+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"fill\",\"key\":\"age\",\"value\":25},\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":3.0},\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Somewhat agree\"},\n    {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Agree\"},\n    {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7.5},\n    {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"likely\"},\n    {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"Watching the gold medal race in the ski jumping.\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 60,
+    "ts_utc": "2026-02-24T15:12:06.648079+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat agree'}"
+  },
+  {
+    "seq": 61,
+    "ts_utc": "2026-02-24T15:12:07.482487+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"select\", \"key\": \"mood_impact\", \"value\": \"Somewhat\"},\n    {\"tool\": \"check\", \"key\": \"mood_impact\", \"value\": \"Somewhat\"}\n]"
+  },
+  {
+    "seq": 62,
+    "ts_utc": "2026-02-24T15:12:07.486422+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 63,
+    "ts_utc": "2026-02-24T15:12:09.781708+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\":\"fill\",\"key\":\"age\",\"value\":25},\n    {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Agree\"},\n    {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":3.0},\n    {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n    {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n    {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7.5},\n    {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"likely\"},\n    {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"Watching the gold medal race in skiing.\"},\n    {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Agree\"},\n    {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 64,
+    "ts_utc": "2026-02-24T15:12:09.781708+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['attention_text_mid']"
+  },
+  {
+    "seq": 65,
+    "ts_utc": "2026-02-24T15:12:09.788975+00:00",
+    "kind": "plan_fallback",
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['attention_text_mid']"
+  },
+  {
+    "seq": 66,
+    "ts_utc": "2026-02-24T15:12:09.788975+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 67,
+    "ts_utc": "2026-02-24T15:12:09.794048+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 68,
+    "ts_utc": "2026-02-24T15:12:09.797922+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 69,
+    "ts_utc": "2026-02-24T15:12:09.878792+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\shot_5.png",
+    "full_page": true
+  },
+  {
+    "seq": 70,
+    "ts_utc": "2026-02-24T15:12:09.880206+00:00",
+    "kind": "page_marker",
+    "step_idx": 5,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 71,
+    "ts_utc": "2026-02-24T15:12:09.883216+00:00",
+    "kind": "action_space",
+    "step_idx": 5,
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_5.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 72,
+    "ts_utc": "2026-02-24T15:12:09.884210+00:00",
+    "kind": "observe_state",
+    "step_idx": 5,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 73,
+    "ts_utc": "2026-02-24T15:12:09.885210+00:00",
+    "kind": "plan_input",
+    "step_idx": 5,
+    "action_space_path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\action_space_5.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 74,
+    "ts_utc": "2026-02-24T15:12:09.886209+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'check', 'key': 'mood_impact', 'value': 'Somewhat agree'}",
+      "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['attention_text_mid']",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'age', 'follow_by_age', 'employment_status', 'watch_time', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+    ]
+  },
+  {
+    "seq": 75,
+    "ts_utc": "2026-02-24T15:12:10.699413+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"check\", \"key\": \"mood_impact\", \"value\": \"Agree\"},\n    {\"tool\": \"select\", \"key\": \"attention_text_mid\", \"value\": \"somewhat\"}\n]"
+  },
+  {
+    "seq": 76,
+    "ts_utc": "2026-02-24T15:12:10.700845+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'age', 'follow_by_age', 'employment_status', 'watch_time', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 77,
+    "ts_utc": "2026-02-24T15:12:13.559161+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"select\", \"key\": \"mood_impact\", \"value\": \"Somewhat\"},\n    {\"tool\": \"fill\", \"key\": \"age\", \"value\": \"25\"},\n    {\"tool\": \"select\", \"key\": \"follow_by_age\", \"value\": \"very_closely\"},\n    {\"tool\": \"select\", \"key\": \"employment_status\", \"value\": \"full_time\"},\n    {\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": 3.5},\n    {\"tool\": \"set_range\", \"key\": \"country_satisfaction\", \"value\": 8.0},\n    {\"tool\": \"select\", \"key\": \"future_interest\", \"value\": \"very_likely\"},\n    {\"tool\": \"fill\", \"key\": \"favorite_moment\", \"value\": \"Watching the gold medal race in the luge.\"},\n    {\"tool\": \"check\", \"key\": \"trust_coverage\", \"value\": \"Agree\"},\n    {\"tool\": \"click\", \"key\": \"next\"}\n]"
+  },
+  {
+    "seq": 78,
+    "ts_utc": "2026-02-24T15:12:13.560162+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Check value must match ACTION_SPACE option label/value: {'tool': 'select', 'key': 'mood_impact', 'value': 'Somewhat'}"
+  },
+  {
+    "seq": 79,
+    "ts_utc": "2026-02-24T15:12:16.312462+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": "[\n    {\"tool\": \"select\", \"key\": \"attention_text_mid\", \"value\": \"somewhat\"},\n    {\"tool\": \"select\", \"key\": \"trust_coverage\", \"value\": \"Agree\"},\n    {\"tool\": \"fill\", \"key\": \"age\", \"value\": 25},\n    {\"tool\": \"select\", \"key\": \"follow_by_age\", \"value\": \"very_closely\"},\n    {\"tool\": \"select\", \"key\": \"employment_status\", \"value\": \"full_time\"},\n    {\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": 3.5},\n    {\"tool\": \"set_range\", \"key\": \"country_satisfaction\", \"value\": 7.8},\n    {\"tool\": \"select\", \"key\": \"future_interest\", \"value\": \"likely\"},\n    {\"tool\": \"fill\", \"key\": \"favorite_moment\", \"value\": \"Watching the gold medal race in alpine skiing.\"},\n    {\"tool\": \"click\", \"key\": \"next\"}\n]"
+  },
+  {
+    "seq": 80,
+    "ts_utc": "2026-02-24T15:12:16.312462+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact']"
+  },
+  {
+    "seq": 81,
+    "ts_utc": "2026-02-24T15:12:16.312462+00:00",
+    "kind": "plan_fallback",
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['mood_impact']"
+  },
+  {
+    "seq": 82,
+    "ts_utc": "2026-02-24T15:12:16.312462+00:00",
+    "kind": "plan_stalled",
+    "empty_plan_streak": 5,
+    "max_empty_plan_streak": 5,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 83,
+    "ts_utc": "2026-02-24T15:12:16.320808+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 84,
+    "ts_utc": "2026-02-24T15:12:16.320808+00:00",
+    "kind": "submission_snapshot",
+    "path": "runs\\survey_v0\\qwen2.5-7b-instruct-1m\\completion\\run_1\\submission_snapshot.json",
+    "capture_stage": "run_finally",
+    "has_any_values": false,
+    "text_answer_count": 0,
+    "image_answer_count": 0
+  },
+  {
+    "seq": 85,
+    "ts_utc": "2026-02-24T15:12:16.325836+00:00",
+    "kind": "session_id",
+    "session_id": "68c8f52c6cc2c78b79e28b7ea9981253"
+  }
+]
