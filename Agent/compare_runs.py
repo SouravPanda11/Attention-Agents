@@ -831,7 +831,13 @@ def _write_csv(path: Path, rows: List[Dict[str, Any]]) -> None:
             writer.writerow(row)
 
 
-def _plot_mode_table(mode: str, records: List[RunRecord], out_dir: Path) -> Optional[Path]:
+def _plot_mode_table(
+    mode: str,
+    records: List[RunRecord],
+    out_dir: Path,
+    survey_version: str,
+    model_name: str,
+) -> Optional[Path]:
     if plt is None:
         return None
     if not records:
@@ -897,7 +903,12 @@ def _plot_mode_table(mode: str, records: List[RunRecord], out_dir: Path) -> Opti
     fig_h = max(4.0, 1.2 + 0.45 * len(records))
     fig, ax = plt.subplots(figsize=(16, fig_h))
     ax.axis("off")
-    ax.set_title(f"Compare Runs - {mode} (Outcomes Table)", fontsize=14, fontweight="bold", pad=14)
+    ax.set_title(
+        f"Compare Runs - {survey_version} - {model_name} - {mode}",
+        fontsize=14,
+        fontweight="bold",
+        pad=14,
+    )
 
     table = ax.table(
         cellText=rows,
@@ -970,7 +981,13 @@ def main() -> int:
     for mode in modes:
         _print_mode_report(mode, records_by_mode[mode])
         if WRITE_PLOTS:
-            p = _plot_mode_table(mode, records_by_mode[mode], out_dir=plot_dir)
+            p = _plot_mode_table(
+                mode=mode,
+                records=records_by_mode[mode],
+                out_dir=plot_dir,
+                survey_version=SURVEY_VERSION,
+                model_name=resolved_model_name,
+            )
             if p:
                 plot_paths.append(p)
 
