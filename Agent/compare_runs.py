@@ -1,13 +1,14 @@
 import json
 import csv
 import sqlite3
+import os
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from model_stack import get_model_name_for_path
+from model_stack import ensure_env_loaded, get_model_name_for_path
 
 try:
     import matplotlib.pyplot as plt
@@ -17,8 +18,9 @@ except Exception:
 # -----------------------------
 # Editable in-code configuration
 # -----------------------------
+ensure_env_loaded()
 RUNS_ROOT = str(Path(__file__).resolve().parent / "runs")
-SURVEY_VERSION = "survey_v1"
+SURVEY_VERSION = os.getenv("SURVEY_VERSION", "").strip()
 MODEL_NAME = get_model_name_for_path()
 # "all" | "completion" | "unconstrained"
 MODE_FILTER = "completion"
@@ -931,6 +933,8 @@ def _plot_mode_table(
 def main() -> int:
     if MODE_FILTER not in {"all", "completion", "unconstrained"}:
         raise SystemExit("MODE_FILTER must be one of: all, completion, unconstrained")
+    if not SURVEY_VERSION:
+        raise SystemExit("SURVEY_VERSION must be set in environment (for example in Agent/.env).")
 
     root = Path(RUNS_ROOT)
     modes = ["completion", "unconstrained"] if MODE_FILTER == "all" else [MODE_FILTER]
