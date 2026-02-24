@@ -7,7 +7,7 @@ from typing import List
 # -----------------------------
 # Editable in-code configuration
 # -----------------------------
-NUM_RUNS = 2
+NUM_RUNS = 100
 HEADLESS = True
 DELAY_S = 0.0
 FAIL_FAST = False
