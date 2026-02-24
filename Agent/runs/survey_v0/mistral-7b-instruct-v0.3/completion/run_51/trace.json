@@ -1,0 +1,1729 @@
+[
+  {
+    "seq": 1,
+    "ts_utc": "2026-02-24T17:02:41.800437+00:00",
+    "kind": "run_context",
+    "survey_version": "survey_v0",
+    "model_name": "mistral-7b-instruct-v0.3",
+    "prompt_behavior_mode": "completion",
+    "planner_mode": "llm_only",
+    "required_tag": "NRT",
+    "target": "http://localhost:3000/survey",
+    "headless": true
+  },
+  {
+    "seq": 2,
+    "ts_utc": "2026-02-24T17:02:42.595387+00:00",
+    "kind": "goto",
+    "url": "http://localhost:3000/survey",
+    "current_url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 3,
+    "ts_utc": "2026-02-24T17:02:42.613076+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 4,
+    "ts_utc": "2026-02-24T17:02:42.627133+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 5,
+    "ts_utc": "2026-02-24T17:02:42.708842+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_1.png",
+    "full_page": true
+  },
+  {
+    "seq": 6,
+    "ts_utc": "2026-02-24T17:02:42.711845+00:00",
+    "kind": "page_marker",
+    "step_idx": 1,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 7,
+    "ts_utc": "2026-02-24T17:02:42.713851+00:00",
+    "kind": "action_space",
+    "step_idx": 1,
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_1.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 8,
+    "ts_utc": "2026-02-24T17:02:42.713851+00:00",
+    "kind": "page_changed",
+    "old_url": "http://localhost:3000/survey",
+    "new_url": "http://localhost:3000/survey/text",
+    "reset_plan_feedback": true
+  },
+  {
+    "seq": 9,
+    "ts_utc": "2026-02-24T17:02:42.714845+00:00",
+    "kind": "observe_state",
+    "step_idx": 1,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 10,
+    "ts_utc": "2026-02-24T17:02:42.715844+00:00",
+    "kind": "plan_input",
+    "step_idx": 1,
+    "action_space_path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_1.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 11,
+    "ts_utc": "2026-02-24T17:02:46.337059+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 0,
+    "raw": " [\n  {\"tool\":\"fill\",\"key\":\"age\",\"value\":\"30\"},\n  {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"somewhat\"},\n  {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n  {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":5},\n  {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"somewhat\"},\n  {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":8},\n  {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"likely\"},\n  {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"My favorite Olympic moment was the historic gold medal win by [Athlete Name] in [Event].\"},\n  {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 12,
+    "ts_utc": "2026-02-24T17:02:46.337059+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact']"
+  },
+  {
+    "seq": 13,
+    "ts_utc": "2026-02-24T17:02:48.569794+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 1,
+    "raw": " [\n  {\"tool\":\"fill\",\"key\":\"age\",\"value\":30},\n  {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"somewhat\"},\n  {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n  {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":5.0},\n  {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"somewhat\"},\n  {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":8.0},\n  {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"likely\"},\n  {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"The opening ceremony was my favorite moment.\"},\n  {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 14,
+    "ts_utc": "2026-02-24T17:02:48.569794+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact']"
+  },
+  {
+    "seq": 15,
+    "ts_utc": "2026-02-24T17:02:50.734687+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 2,
+    "raw": " [\n  {\"tool\":\"fill\",\"key\":\"age\",\"value\":42},\n  {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"somewhat\"},\n  {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n  {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":5.0},\n  {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"somewhat\"},\n  {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":8.0},\n  {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"likely\"},\n  {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"The victory of Team USA in the ice hockey final was my favorite moment.\"}\n]"
+  },
+  {
+    "seq": 16,
+    "ts_utc": "2026-02-24T17:02:50.734687+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact']"
+  },
+  {
+    "seq": 17,
+    "ts_utc": "2026-02-24T17:02:50.742982+00:00",
+    "kind": "plan_fallback",
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact']"
+  },
+  {
+    "seq": 18,
+    "ts_utc": "2026-02-24T17:02:50.742982+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 19,
+    "ts_utc": "2026-02-24T17:02:50.742982+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 20,
+    "ts_utc": "2026-02-24T17:02:50.742982+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 21,
+    "ts_utc": "2026-02-24T17:02:50.823754+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2.png",
+    "full_page": true
+  },
+  {
+    "seq": 22,
+    "ts_utc": "2026-02-24T17:02:50.826002+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 23,
+    "ts_utc": "2026-02-24T17:02:50.836769+00:00",
+    "kind": "action_space",
+    "step_idx": 2,
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_2.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 24,
+    "ts_utc": "2026-02-24T17:02:50.836769+00:00",
+    "kind": "observe_state",
+    "step_idx": 2,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 25,
+    "ts_utc": "2026-02-24T17:02:50.837773+00:00",
+    "kind": "plan_input",
+    "step_idx": 2,
+    "action_space_path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_2.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 26,
+    "ts_utc": "2026-02-24T17:02:50.838773+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact']",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact']",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact']"
+    ]
+  },
+  {
+    "seq": 27,
+    "ts_utc": "2026-02-24T17:02:53.635027+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 11,
+    "validation_feedback_count": 3,
+    "raw": " [\n  {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Agree\"},\n  {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Strongly agree\"},\n  {\"tool\":\"fill\",\"key\":\"age\",\"value\":30},\n  {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n  {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"full_time\"},\n  {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":5},\n  {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"somewhat\"},\n  {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":8},\n  {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"very_likely\"},\n  {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"The gold medal win by [Athlete Name] in [Event] was my favorite moment.\"},\n  {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 28,
+    "ts_utc": "2026-02-24T17:02:53.635027+00:00",
+    "kind": "plan",
+    "steps": [
+      {
+        "tool": "check",
+        "key": "trust_coverage",
+        "selector": "input[type=\"radio\"][name=\"trust_coverage\"] >> nth=3",
+        "value": "Agree"
+      },
+      {
+        "tool": "check",
+        "key": "mood_impact",
+        "selector": "input[type=\"radio\"][name=\"mood_impact\"] >> nth=4",
+        "value": "Strongly agree"
+      },
+      {
+        "tool": "fill",
+        "key": "age",
+        "selector": "#q_age",
+        "value": "30"
+      },
+      {
+        "tool": "select",
+        "key": "follow_by_age",
+        "selector": "#q_follow_by_age",
+        "value": "very_closely"
+      },
+      {
+        "tool": "select",
+        "key": "employment_status",
+        "selector": "#q_employment_status",
+        "value": "full_time"
+      },
+      {
+        "tool": "set_range",
+        "key": "watch_time",
+        "selector": "#q_watch_time",
+        "value": 5
+      },
+      {
+        "tool": "select",
+        "key": "attention_text_mid",
+        "selector": "#attention_text_mid",
+        "value": "somewhat"
+      },
+      {
+        "tool": "set_range",
+        "key": "country_satisfaction",
+        "selector": "#q_country_satisfaction",
+        "value": 8
+      },
+      {
+        "tool": "select",
+        "key": "future_interest",
+        "selector": "#q_future_interest",
+        "value": "very_likely"
+      },
+      {
+        "tool": "fill",
+        "key": "favorite_moment",
+        "selector": "#q_favorite_moment",
+        "value": "The gold medal win by [Athlete Name] in [Event] was my favorite moment."
+      },
+      {
+        "tool": "click",
+        "key": "next",
+        "selector": "button:has-text(\"Next\")"
+      }
+    ]
+  },
+  {
+    "seq": 29,
+    "ts_utc": "2026-02-24T17:02:53.637032+00:00",
+    "kind": "exec_step",
+    "index": 0,
+    "tool": "check",
+    "selector": "input[type=\"radio\"][name=\"trust_coverage\"] >> nth=3",
+    "value": "Agree",
+    "field_key": "trust_coverage",
+    "field_label": "5) I trust the Olympic coverage I usually consume.",
+    "field_interaction": "check",
+    "field_kind": null,
+    "question_text": null,
+    "alt": null,
+    "option_label": "Agree",
+    "option_value": "Agree"
+  },
+  {
+    "seq": 30,
+    "ts_utc": "2026-02-24T17:02:53.659080+00:00",
+    "kind": "check",
+    "selector": "input[type=\"radio\"][name=\"trust_coverage\"] >> nth=3"
+  },
+  {
+    "seq": 31,
+    "ts_utc": "2026-02-24T17:02:53.739566+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_1.png",
+    "full_page": true
+  },
+  {
+    "seq": 32,
+    "ts_utc": "2026-02-24T17:02:53.741589+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_1",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 33,
+    "ts_utc": "2026-02-24T17:02:53.742608+00:00",
+    "kind": "exec_step",
+    "index": 1,
+    "tool": "check",
+    "selector": "input[type=\"radio\"][name=\"mood_impact\"] >> nth=4",
+    "value": "Strongly agree",
+    "field_key": "mood_impact",
+    "field_label": "9) The Olympics positively affected my day-to-day mood.",
+    "field_interaction": "check",
+    "field_kind": null,
+    "question_text": null,
+    "alt": null,
+    "option_label": "Strongly agree",
+    "option_value": "Strongly agree"
+  },
+  {
+    "seq": 34,
+    "ts_utc": "2026-02-24T17:02:53.772436+00:00",
+    "kind": "check",
+    "selector": "input[type=\"radio\"][name=\"mood_impact\"] >> nth=4"
+  },
+  {
+    "seq": 35,
+    "ts_utc": "2026-02-24T17:02:53.837978+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_2.png",
+    "full_page": true
+  },
+  {
+    "seq": 36,
+    "ts_utc": "2026-02-24T17:02:53.840978+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_2",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 37,
+    "ts_utc": "2026-02-24T17:02:53.840978+00:00",
+    "kind": "exec_step",
+    "index": 2,
+    "tool": "fill",
+    "selector": "#q_age",
+    "value": "30",
+    "field_key": "age",
+    "field_label": "1) Your age",
+    "field_interaction": "fill",
+    "field_kind": null,
+    "question_text": "1) Your age",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 38,
+    "ts_utc": "2026-02-24T17:02:53.916703+00:00",
+    "kind": "fill",
+    "selector": "#q_age",
+    "value": "30",
+    "element_type": "number"
+  },
+  {
+    "seq": 39,
+    "ts_utc": "2026-02-24T17:02:53.991886+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_3.png",
+    "full_page": true
+  },
+  {
+    "seq": 40,
+    "ts_utc": "2026-02-24T17:02:53.993887+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_3",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 41,
+    "ts_utc": "2026-02-24T17:02:53.994886+00:00",
+    "kind": "exec_step",
+    "index": 3,
+    "tool": "select",
+    "selector": "#q_follow_by_age",
+    "value": "very_closely",
+    "field_key": "follow_by_age",
+    "field_label": "2) Compared with people in your age group, how closely did you follow the most recent Winter Olympics?",
+    "field_interaction": "select",
+    "field_kind": null,
+    "question_text": "2) Compared with people in your age group, how closely did you follow the most recent Winter Olympics?",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 42,
+    "ts_utc": "2026-02-24T17:02:54.002358+00:00",
+    "kind": "select",
+    "selector": "#q_follow_by_age",
+    "value": "very_closely"
+  },
+  {
+    "seq": 43,
+    "ts_utc": "2026-02-24T17:02:54.073804+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_4.png",
+    "full_page": true
+  },
+  {
+    "seq": 44,
+    "ts_utc": "2026-02-24T17:02:54.076248+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_4",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 45,
+    "ts_utc": "2026-02-24T17:02:54.077252+00:00",
+    "kind": "exec_step",
+    "index": 4,
+    "tool": "select",
+    "selector": "#q_employment_status",
+    "value": "full_time",
+    "field_key": "employment_status",
+    "field_label": "3) Current employment status",
+    "field_interaction": "select",
+    "field_kind": null,
+    "question_text": "3) Current employment status",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 46,
+    "ts_utc": "2026-02-24T17:02:54.084008+00:00",
+    "kind": "select",
+    "selector": "#q_employment_status",
+    "value": "full_time"
+  },
+  {
+    "seq": 47,
+    "ts_utc": "2026-02-24T17:02:54.155858+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_5.png",
+    "full_page": true
+  },
+  {
+    "seq": 48,
+    "ts_utc": "2026-02-24T17:02:54.158091+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_5",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 49,
+    "ts_utc": "2026-02-24T17:02:54.158091+00:00",
+    "kind": "exec_step",
+    "index": 5,
+    "tool": "set_range",
+    "selector": "#q_watch_time",
+    "value": 5,
+    "field_key": "watch_time",
+    "field_label": "4) During the Olympics period, how much time did you spend daily on Olympics content?",
+    "field_interaction": "set_range",
+    "field_kind": null,
+    "question_text": "4) During the Olympics period, how much time did you spend daily on Olympics content?",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 50,
+    "ts_utc": "2026-02-24T17:02:54.207762+00:00",
+    "kind": "set_range",
+    "selector": "#q_watch_time",
+    "requested": 5,
+    "clamped_value": 5.0,
+    "actual_value": "5",
+    "min": 1.0,
+    "max": 10.0,
+    "step": 1.0,
+    "via": "keyboard"
+  },
+  {
+    "seq": 51,
+    "ts_utc": "2026-02-24T17:02:54.273159+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_6.png",
+    "full_page": true
+  },
+  {
+    "seq": 52,
+    "ts_utc": "2026-02-24T17:02:54.275159+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_6",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 53,
+    "ts_utc": "2026-02-24T17:02:54.276159+00:00",
+    "kind": "exec_step",
+    "index": 6,
+    "tool": "select",
+    "selector": "#attention_text_mid",
+    "value": "somewhat",
+    "field_key": "attention_text_mid",
+    "field_label": "Please select Somewhat for this item.",
+    "field_interaction": "select",
+    "field_kind": null,
+    "question_text": "Please select Somewhat for this item.",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 54,
+    "ts_utc": "2026-02-24T17:02:54.283158+00:00",
+    "kind": "select",
+    "selector": "#attention_text_mid",
+    "value": "somewhat"
+  },
+  {
+    "seq": 55,
+    "ts_utc": "2026-02-24T17:02:54.357966+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_7.png",
+    "full_page": true
+  },
+  {
+    "seq": 56,
+    "ts_utc": "2026-02-24T17:02:54.360721+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_7",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 57,
+    "ts_utc": "2026-02-24T17:02:54.361725+00:00",
+    "kind": "exec_step",
+    "index": 7,
+    "tool": "set_range",
+    "selector": "#q_country_satisfaction",
+    "value": 8,
+    "field_key": "country_satisfaction",
+    "field_label": "6) How satisfied were you with your country's Olympic performance?",
+    "field_interaction": "set_range",
+    "field_kind": null,
+    "question_text": "6) How satisfied were you with your country's Olympic performance?",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 58,
+    "ts_utc": "2026-02-24T17:02:54.429788+00:00",
+    "kind": "set_range",
+    "selector": "#q_country_satisfaction",
+    "requested": 8,
+    "clamped_value": 8.0,
+    "actual_value": "8",
+    "min": 1.0,
+    "max": 10.0,
+    "step": 1.0,
+    "via": "keyboard"
+  },
+  {
+    "seq": 59,
+    "ts_utc": "2026-02-24T17:02:54.509456+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_8.png",
+    "full_page": true
+  },
+  {
+    "seq": 60,
+    "ts_utc": "2026-02-24T17:02:54.511599+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_8",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 61,
+    "ts_utc": "2026-02-24T17:02:54.512599+00:00",
+    "kind": "exec_step",
+    "index": 8,
+    "tool": "select",
+    "selector": "#q_future_interest",
+    "value": "very_likely",
+    "field_key": "future_interest",
+    "field_label": "7) How likely are you to follow the next Olympics?",
+    "field_interaction": "select",
+    "field_kind": null,
+    "question_text": "7) How likely are you to follow the next Olympics?",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 62,
+    "ts_utc": "2026-02-24T17:02:54.520400+00:00",
+    "kind": "select",
+    "selector": "#q_future_interest",
+    "value": "very_likely"
+  },
+  {
+    "seq": 63,
+    "ts_utc": "2026-02-24T17:02:54.589536+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_9.png",
+    "full_page": true
+  },
+  {
+    "seq": 64,
+    "ts_utc": "2026-02-24T17:02:54.591596+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_9",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 65,
+    "ts_utc": "2026-02-24T17:02:54.592600+00:00",
+    "kind": "exec_step",
+    "index": 9,
+    "tool": "fill",
+    "selector": "#q_favorite_moment",
+    "value": "The gold medal win by [Athlete Name] in [Event] was my favorite moment.",
+    "field_key": "favorite_moment",
+    "field_label": "8) Briefly describe one memorable Olympic moment for you.",
+    "field_interaction": "fill",
+    "field_kind": null,
+    "question_text": "8) Briefly describe one memorable Olympic moment for you.",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 66,
+    "ts_utc": "2026-02-24T17:02:54.605060+00:00",
+    "kind": "fill",
+    "selector": "#q_favorite_moment",
+    "value": "The gold medal win by [Athlete Name] in [Event] was my favorite moment.",
+    "element_type": "text"
+  },
+  {
+    "seq": 67,
+    "ts_utc": "2026-02-24T17:02:54.672442+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_10.png",
+    "full_page": true
+  },
+  {
+    "seq": 68,
+    "ts_utc": "2026-02-24T17:02:54.674446+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_10",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 69,
+    "ts_utc": "2026-02-24T17:02:54.675946+00:00",
+    "kind": "exec_step",
+    "index": 10,
+    "tool": "click",
+    "selector": "button:has-text(\"Next\")",
+    "value": null,
+    "field_key": "field_18",
+    "field_label": null,
+    "field_interaction": "click",
+    "field_kind": null,
+    "question_text": "",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 70,
+    "ts_utc": "2026-02-24T17:02:54.701343+00:00",
+    "kind": "click",
+    "selector": "button:has-text(\"Next\")"
+  },
+  {
+    "seq": 71,
+    "ts_utc": "2026-02-24T17:02:55.577928+00:00",
+    "kind": "url_changed",
+    "old_url": "http://localhost:3000/survey/text",
+    "new_url": "http://localhost:3000/survey/image"
+  },
+  {
+    "seq": 72,
+    "ts_utc": "2026-02-24T17:02:55.585978+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 8000
+  },
+  {
+    "seq": 73,
+    "ts_utc": "2026-02-24T17:02:55.587159+00:00",
+    "kind": "navigation_detected",
+    "step_idx": 2,
+    "old_url": "http://localhost:3000/survey/text",
+    "new_url": "http://localhost:3000/survey/image"
+  },
+  {
+    "seq": 74,
+    "ts_utc": "2026-02-24T17:02:55.895370+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_2_act_11.png",
+    "full_page": true
+  },
+  {
+    "seq": 75,
+    "ts_utc": "2026-02-24T17:02:55.899374+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "act_11",
+    "url": "http://localhost:3000/survey/image",
+    "title": "Survey Sandbox",
+    "heading": "Sports Survey",
+    "has_text_answers_store": true,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 76,
+    "ts_utc": "2026-02-24T17:02:55.901397+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 77,
+    "ts_utc": "2026-02-24T17:02:55.903855+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 78,
+    "ts_utc": "2026-02-24T17:02:56.128327+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_3.png",
+    "full_page": true
+  },
+  {
+    "seq": 79,
+    "ts_utc": "2026-02-24T17:02:56.131327+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/image",
+    "title": "Survey Sandbox",
+    "heading": "Sports Survey",
+    "has_text_answers_store": true,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 80,
+    "ts_utc": "2026-02-24T17:02:56.133825+00:00",
+    "kind": "image_option_map",
+    "step_idx": 3,
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\image_option_map_3.json",
+    "item_count": 5
+  },
+  {
+    "seq": 81,
+    "ts_utc": "2026-02-24T17:02:56.145715+00:00",
+    "kind": "ui_layout_trace",
+    "step_idx": 3,
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\ui_layout_trace_3.json",
+    "question_count": 4
+  },
+  {
+    "seq": 82,
+    "ts_utc": "2026-02-24T17:02:56.146895+00:00",
+    "kind": "action_space",
+    "step_idx": 3,
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_3.json",
+    "field_count": 7,
+    "interaction_counts": {
+      "check": 5,
+      "fill": 1,
+      "click": 1
+    }
+  },
+  {
+    "seq": 83,
+    "ts_utc": "2026-02-24T17:02:56.147899+00:00",
+    "kind": "observe_state",
+    "step_idx": 3,
+    "url": "http://localhost:3000/survey/image"
+  },
+  {
+    "seq": 84,
+    "ts_utc": "2026-02-24T17:02:56.147899+00:00",
+    "kind": "plan_input",
+    "step_idx": 3,
+    "action_space_path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_3.json",
+    "action_space_field_count": 7
+  },
+  {
+    "seq": 85,
+    "ts_utc": "2026-02-24T17:02:58.877243+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 7,
+    "validation_feedback_count": 0,
+    "raw": " [\n  {\"tool\":\"check\",\"key\":\"image_q1\",\"value\":\"a\"},\n  {\"tool\":\"check\",\"key\":\"image_q2\",\"value\":\"a\"},\n  {\"tool\":\"check\",\"key\":\"image_q3\",\"value\":\"a\"},\n  {\"tool\":\"check\",\"key\":\"attention_image_mid\",\"value\":\"a\"},\n  {\"tool\":\"check\",\"key\":\"image_q4\",\"value\":\"a\"},\n  {\"tool\":\"fill\",\"key\":\"field_10\",\"value\":\"2QEB5\"},\n  {\"tool\":\"click\",\"key\":\"next\"}\n]"
+  },
+  {
+    "seq": 86,
+    "ts_utc": "2026-02-24T17:02:58.881744+00:00",
+    "kind": "plan",
+    "steps": [
+      {
+        "tool": "check",
+        "key": "image_q1",
+        "selector": "label[for=\"image_q1_a\"]",
+        "value": "a"
+      },
+      {
+        "tool": "check",
+        "key": "image_q2",
+        "selector": "label[for=\"image_q2_a\"]",
+        "value": "a"
+      },
+      {
+        "tool": "check",
+        "key": "image_q3",
+        "selector": "label[for=\"image_q3_a\"]",
+        "value": "a"
+      },
+      {
+        "tool": "check",
+        "key": "attention_image_mid",
+        "selector": "label[for=\"attention_image_mid_a\"]",
+        "value": "a"
+      },
+      {
+        "tool": "check",
+        "key": "image_q4",
+        "selector": "label[for=\"image_q4_a\"]",
+        "value": "a"
+      },
+      {
+        "tool": "fill",
+        "key": "field_10",
+        "selector": "xpath=/html/body/main/div/div/div[3]/div/input",
+        "value": "2QEB5"
+      },
+      {
+        "tool": "click",
+        "key": "next",
+        "selector": "button:has-text(\"Next\")"
+      }
+    ]
+  },
+  {
+    "seq": 87,
+    "ts_utc": "2026-02-24T17:02:58.881744+00:00",
+    "kind": "exec_step",
+    "index": 0,
+    "tool": "check",
+    "selector": "label[for=\"image_q1_a\"]",
+    "value": "a",
+    "field_key": "image_q1",
+    "field_label": "Which image is more related to basketball?",
+    "field_interaction": "check",
+    "field_kind": null,
+    "question_text": null,
+    "alt": null,
+    "option_label": "Basketball",
+    "option_value": "a"
+  },
+  {
+    "seq": 88,
+    "ts_utc": "2026-02-24T17:02:58.904963+00:00",
+    "kind": "check",
+    "selector": "label[for=\"image_q1_a\"]"
+  },
+  {
+    "seq": 89,
+    "ts_utc": "2026-02-24T17:02:59.177990+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_3_act_1.png",
+    "full_page": true
+  },
+  {
+    "seq": 90,
+    "ts_utc": "2026-02-24T17:02:59.179993+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "act_1",
+    "url": "http://localhost:3000/survey/image",
+    "title": "Survey Sandbox",
+    "heading": "Sports Survey",
+    "has_text_answers_store": true,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 91,
+    "ts_utc": "2026-02-24T17:02:59.180991+00:00",
+    "kind": "exec_step",
+    "index": 1,
+    "tool": "check",
+    "selector": "label[for=\"image_q2_a\"]",
+    "value": "a",
+    "field_key": "image_q2",
+    "field_label": "Which image is more related to gymnastics?",
+    "field_interaction": "check",
+    "field_kind": null,
+    "question_text": null,
+    "alt": null,
+    "option_label": "gymnastics",
+    "option_value": "a"
+  },
+  {
+    "seq": 92,
+    "ts_utc": "2026-02-24T17:02:59.203934+00:00",
+    "kind": "check",
+    "selector": "label[for=\"image_q2_a\"]"
+  },
+  {
+    "seq": 93,
+    "ts_utc": "2026-02-24T17:02:59.446851+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_3_act_2.png",
+    "full_page": true
+  },
+  {
+    "seq": 94,
+    "ts_utc": "2026-02-24T17:02:59.450443+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "act_2",
+    "url": "http://localhost:3000/survey/image",
+    "title": "Survey Sandbox",
+    "heading": "Sports Survey",
+    "has_text_answers_store": true,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 95,
+    "ts_utc": "2026-02-24T17:02:59.451442+00:00",
+    "kind": "exec_step",
+    "index": 2,
+    "tool": "check",
+    "selector": "label[for=\"image_q3_a\"]",
+    "value": "a",
+    "field_key": "image_q3",
+    "field_label": "Which image is more related to badminton?",
+    "field_interaction": "check",
+    "field_kind": null,
+    "question_text": null,
+    "alt": null,
+    "option_label": "Badminton",
+    "option_value": "a"
+  },
+  {
+    "seq": 96,
+    "ts_utc": "2026-02-24T17:02:59.471064+00:00",
+    "kind": "check",
+    "selector": "label[for=\"image_q3_a\"]"
+  },
+  {
+    "seq": 97,
+    "ts_utc": "2026-02-24T17:02:59.697009+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_3_act_3.png",
+    "full_page": true
+  },
+  {
+    "seq": 98,
+    "ts_utc": "2026-02-24T17:02:59.700147+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "act_3",
+    "url": "http://localhost:3000/survey/image",
+    "title": "Survey Sandbox",
+    "heading": "Sports Survey",
+    "has_text_answers_store": true,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 99,
+    "ts_utc": "2026-02-24T17:02:59.700147+00:00",
+    "kind": "exec_step",
+    "index": 3,
+    "tool": "check",
+    "selector": "label[for=\"attention_image_mid_a\"]",
+    "value": "a",
+    "field_key": "attention_image_mid",
+    "field_label": "Select the soccer ball.",
+    "field_interaction": "check",
+    "field_kind": null,
+    "question_text": null,
+    "alt": null,
+    "option_label": "Soccer",
+    "option_value": "a"
+  },
+  {
+    "seq": 100,
+    "ts_utc": "2026-02-24T17:02:59.719286+00:00",
+    "kind": "check",
+    "selector": "label[for=\"attention_image_mid_a\"]"
+  },
+  {
+    "seq": 101,
+    "ts_utc": "2026-02-24T17:02:59.941959+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_3_act_4.png",
+    "full_page": true
+  },
+  {
+    "seq": 102,
+    "ts_utc": "2026-02-24T17:02:59.945087+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "act_4",
+    "url": "http://localhost:3000/survey/image",
+    "title": "Survey Sandbox",
+    "heading": "Sports Survey",
+    "has_text_answers_store": true,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 103,
+    "ts_utc": "2026-02-24T17:02:59.946086+00:00",
+    "kind": "exec_step",
+    "index": 4,
+    "tool": "check",
+    "selector": "label[for=\"image_q4_a\"]",
+    "value": "a",
+    "field_key": "image_q4",
+    "field_label": "Which image is more related to rowing?",
+    "field_interaction": "check",
+    "field_kind": null,
+    "question_text": null,
+    "alt": null,
+    "option_label": "Rowing",
+    "option_value": "a"
+  },
+  {
+    "seq": 104,
+    "ts_utc": "2026-02-24T17:02:59.971263+00:00",
+    "kind": "check",
+    "selector": "label[for=\"image_q4_a\"]"
+  },
+  {
+    "seq": 105,
+    "ts_utc": "2026-02-24T17:03:00.193953+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_3_act_5.png",
+    "full_page": true
+  },
+  {
+    "seq": 106,
+    "ts_utc": "2026-02-24T17:03:00.196953+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "act_5",
+    "url": "http://localhost:3000/survey/image",
+    "title": "Survey Sandbox",
+    "heading": "Sports Survey",
+    "has_text_answers_store": true,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 107,
+    "ts_utc": "2026-02-24T17:03:00.197955+00:00",
+    "kind": "exec_step",
+    "index": 5,
+    "tool": "fill",
+    "selector": "xpath=/html/body/main/div/div/div[3]/div/input",
+    "value": "2QEB5",
+    "field_key": "field_10",
+    "field_label": null,
+    "field_interaction": "fill",
+    "field_kind": null,
+    "question_text": "",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 108,
+    "ts_utc": "2026-02-24T17:03:00.214130+00:00",
+    "kind": "fill",
+    "selector": "xpath=/html/body/main/div/div/div[3]/div/input",
+    "value": "2QEB5",
+    "element_type": "text"
+  },
+  {
+    "seq": 109,
+    "ts_utc": "2026-02-24T17:03:00.444209+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_3_act_6.png",
+    "full_page": true
+  },
+  {
+    "seq": 110,
+    "ts_utc": "2026-02-24T17:03:00.446212+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "act_6",
+    "url": "http://localhost:3000/survey/image",
+    "title": "Survey Sandbox",
+    "heading": "Sports Survey",
+    "has_text_answers_store": true,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 111,
+    "ts_utc": "2026-02-24T17:03:00.447209+00:00",
+    "kind": "exec_step",
+    "index": 6,
+    "tool": "click",
+    "selector": "button:has-text(\"Next\")",
+    "value": null,
+    "field_key": "field_11",
+    "field_label": null,
+    "field_interaction": "click",
+    "field_kind": null,
+    "question_text": "",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 112,
+    "ts_utc": "2026-02-24T17:03:00.468619+00:00",
+    "kind": "click",
+    "selector": "button:has-text(\"Next\")"
+  },
+  {
+    "seq": 113,
+    "ts_utc": "2026-02-24T17:03:01.161184+00:00",
+    "kind": "url_changed",
+    "old_url": "http://localhost:3000/survey/image",
+    "new_url": "http://localhost:3000/survey/thank-you"
+  },
+  {
+    "seq": 114,
+    "ts_utc": "2026-02-24T17:03:01.173183+00:00",
+    "kind": "wait_for_any",
+    "hit": "button",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 8000
+  },
+  {
+    "seq": 115,
+    "ts_utc": "2026-02-24T17:03:01.174183+00:00",
+    "kind": "navigation_detected",
+    "step_idx": 3,
+    "old_url": "http://localhost:3000/survey/image",
+    "new_url": "http://localhost:3000/survey/thank-you"
+  },
+  {
+    "seq": 116,
+    "ts_utc": "2026-02-24T17:03:01.222500+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_3_act_7.png",
+    "full_page": true
+  },
+  {
+    "seq": 117,
+    "ts_utc": "2026-02-24T17:03:01.225873+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "act_7",
+    "url": "http://localhost:3000/survey/thank-you",
+    "title": "Survey Sandbox",
+    "heading": "Thank You Page",
+    "has_text_answers_store": true,
+    "has_image_answers_store": true
+  },
+  {
+    "seq": 118,
+    "ts_utc": "2026-02-24T17:03:01.289999+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_4.png",
+    "full_page": true
+  },
+  {
+    "seq": 119,
+    "ts_utc": "2026-02-24T17:03:01.293497+00:00",
+    "kind": "page_marker",
+    "step_idx": 4,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/thank-you",
+    "title": "Survey Sandbox",
+    "heading": "Thank You Page",
+    "has_text_answers_store": true,
+    "has_image_answers_store": true
+  },
+  {
+    "seq": 120,
+    "ts_utc": "2026-02-24T17:03:01.295984+00:00",
+    "kind": "action_space",
+    "step_idx": 4,
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_4.json",
+    "field_count": 1,
+    "interaction_counts": {
+      "click": 1
+    }
+  },
+  {
+    "seq": 121,
+    "ts_utc": "2026-02-24T17:03:01.296988+00:00",
+    "kind": "observe_state",
+    "step_idx": 4,
+    "url": "http://localhost:3000/survey/thank-you"
+  },
+  {
+    "seq": 122,
+    "ts_utc": "2026-02-24T17:03:01.297988+00:00",
+    "kind": "plan_input",
+    "step_idx": 4,
+    "action_space_path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_4.json",
+    "action_space_field_count": 1
+  },
+  {
+    "seq": 123,
+    "ts_utc": "2026-02-24T17:03:03.028762+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 1,
+    "validation_feedback_count": 0,
+    "raw": " [\n  {\"tool\":\"fill\",\"key\":\"firstName\",\"value\":\"John\"},\n  {\"tool\":\"fill\",\"key\":\"lastName\",\"value\":\"Doe\"},\n  {\"tool\":\"select\",\"key\":\"gender\",\"value\":\"Male\"},\n  {\"tool\":\"set_range\",\"key\":\"age\",\"value\":30},\n  {\"tool\":\"check\",\"key\":\"interests\",\"value\":\"Sports\"},\n  {\"tool\":\"click\",\"key\":\"submit\"}\n]"
+  },
+  {
+    "seq": 124,
+    "ts_utc": "2026-02-24T17:03:03.030775+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Key not in ACTION_SPACE: {'tool': 'fill', 'key': 'firstName', 'value': 'John'}"
+  },
+  {
+    "seq": 125,
+    "ts_utc": "2026-02-24T17:03:03.404317+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 1,
+    "validation_feedback_count": 1,
+    "raw": " [\n  {\"tool\":\"done\"}\n]"
+  },
+  {
+    "seq": 126,
+    "ts_utc": "2026-02-24T17:03:03.408437+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Completion mode requires exactly one final navigation click (next/submit); found 0."
+  },
+  {
+    "seq": 127,
+    "ts_utc": "2026-02-24T17:03:03.767881+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 1,
+    "validation_feedback_count": 2,
+    "raw": " [\n  {\"tool\":\"done\"}\n]"
+  },
+  {
+    "seq": 128,
+    "ts_utc": "2026-02-24T17:03:03.772051+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Completion mode requires exactly one final navigation click (next/submit); found 0."
+  },
+  {
+    "seq": 129,
+    "ts_utc": "2026-02-24T17:03:03.772051+00:00",
+    "kind": "plan_fallback",
+    "error": "Completion mode requires exactly one final navigation click (next/submit); found 0."
+  },
+  {
+    "seq": 130,
+    "ts_utc": "2026-02-24T17:03:03.772051+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 131,
+    "ts_utc": "2026-02-24T17:03:03.837735+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_5.png",
+    "full_page": true
+  },
+  {
+    "seq": 132,
+    "ts_utc": "2026-02-24T17:03:03.839740+00:00",
+    "kind": "page_marker",
+    "step_idx": 5,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/thank-you",
+    "title": "Survey Sandbox",
+    "heading": "Thank You Page",
+    "has_text_answers_store": true,
+    "has_image_answers_store": true
+  },
+  {
+    "seq": 133,
+    "ts_utc": "2026-02-24T17:03:03.841739+00:00",
+    "kind": "action_space",
+    "step_idx": 5,
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_5.json",
+    "field_count": 1,
+    "interaction_counts": {
+      "click": 1
+    }
+  },
+  {
+    "seq": 134,
+    "ts_utc": "2026-02-24T17:03:03.842739+00:00",
+    "kind": "observe_state",
+    "step_idx": 5,
+    "url": "http://localhost:3000/survey/thank-you"
+  },
+  {
+    "seq": 135,
+    "ts_utc": "2026-02-24T17:03:03.843739+00:00",
+    "kind": "plan_input",
+    "step_idx": 5,
+    "action_space_path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_5.json",
+    "action_space_field_count": 1
+  },
+  {
+    "seq": 136,
+    "ts_utc": "2026-02-24T17:03:03.844739+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Key not in ACTION_SPACE: {'tool': 'fill', 'key': 'firstName', 'value': 'John'}",
+      "Completion mode requires exactly one final navigation click (next/submit); found 0.",
+      "Completion mode requires exactly one final navigation click (next/submit); found 0.",
+      "Key not in ACTION_SPACE: {'tool': 'set_range', 'key': 'age', 'value': 35}"
+    ]
+  },
+  {
+    "seq": 137,
+    "ts_utc": "2026-02-24T17:03:05.200363+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 1,
+    "validation_feedback_count": 3,
+    "raw": " [\n  {\"tool\":\"set_range\",\"key\":\"age\", \"value\":35},\n  {\"tool\":\"fill\",\"key\":\"firstName\", \"value\":\"Jane\"},\n  {\"tool\":\"fill\",\"key\":\"lastName\", \"value\":\"Doe\"},\n  {\"tool\":\"select\",\"key\":\"gender\", \"value\":\"Female\"},\n  {\"tool\":\"check\",\"key\":\"maritalStatus\", \"value\":\"Married\"},\n  {\"tool\":\"click\",\"key\":\"submit\"}\n]"
+  },
+  {
+    "seq": 138,
+    "ts_utc": "2026-02-24T17:03:05.200363+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Key not in ACTION_SPACE: {'tool': 'set_range', 'key': 'age', 'value': 35}"
+  },
+  {
+    "seq": 139,
+    "ts_utc": "2026-02-24T17:03:05.643610+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 1,
+    "validation_feedback_count": 3,
+    "raw": " [\n  {\"tool\": \"click\", \"key\": \"submit\"}\n]"
+  },
+  {
+    "seq": 140,
+    "ts_utc": "2026-02-24T17:03:05.645619+00:00",
+    "kind": "plan_recovered",
+    "attempt": 2,
+    "plan_size": 1
+  },
+  {
+    "seq": 141,
+    "ts_utc": "2026-02-24T17:03:05.647626+00:00",
+    "kind": "plan",
+    "steps": [
+      {
+        "tool": "click",
+        "key": "submit",
+        "selector": "button:has-text(\"Submit Responses\")"
+      }
+    ]
+  },
+  {
+    "seq": 142,
+    "ts_utc": "2026-02-24T17:03:05.647626+00:00",
+    "kind": "exec_step",
+    "index": 0,
+    "tool": "click",
+    "selector": "button:has-text(\"Submit Responses\")",
+    "value": null,
+    "field_key": "field_0",
+    "field_label": null,
+    "field_interaction": "click",
+    "field_kind": null,
+    "question_text": "",
+    "alt": null,
+    "option_label": null,
+    "option_value": null
+  },
+  {
+    "seq": 143,
+    "ts_utc": "2026-02-24T17:03:05.651635+00:00",
+    "kind": "submission_snapshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\submission_snapshot.json",
+    "capture_stage": "pre_submit_click",
+    "has_any_values": true,
+    "text_answer_count": 9,
+    "image_answer_count": 4
+  },
+  {
+    "seq": 144,
+    "ts_utc": "2026-02-24T17:03:05.669401+00:00",
+    "kind": "click",
+    "selector": "button:has-text(\"Submit Responses\")"
+  },
+  {
+    "seq": 145,
+    "ts_utc": "2026-02-24T17:03:06.327254+00:00",
+    "kind": "url_changed",
+    "old_url": "http://localhost:3000/survey/thank-you",
+    "new_url": "http://localhost:3000/survey/done"
+  },
+  {
+    "seq": 146,
+    "ts_utc": "2026-02-24T17:03:06.337528+00:00",
+    "kind": "wait_for_any",
+    "hit": "button",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 8000
+  },
+  {
+    "seq": 147,
+    "ts_utc": "2026-02-24T17:03:06.338983+00:00",
+    "kind": "navigation_detected",
+    "step_idx": 5,
+    "old_url": "http://localhost:3000/survey/thank-you",
+    "new_url": "http://localhost:3000/survey/done"
+  },
+  {
+    "seq": 148,
+    "ts_utc": "2026-02-24T17:03:06.385273+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_5_act_1.png",
+    "full_page": true
+  },
+  {
+    "seq": 149,
+    "ts_utc": "2026-02-24T17:03:06.389136+00:00",
+    "kind": "page_marker",
+    "step_idx": 5,
+    "stage": "act_1",
+    "url": "http://localhost:3000/survey/done",
+    "title": "Survey Sandbox",
+    "heading": "Responses Submitted",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 150,
+    "ts_utc": "2026-02-24T17:03:06.436194+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\shot_6.png",
+    "full_page": true
+  },
+  {
+    "seq": 151,
+    "ts_utc": "2026-02-24T17:03:06.438195+00:00",
+    "kind": "page_marker",
+    "step_idx": 6,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/done",
+    "title": "Survey Sandbox",
+    "heading": "Responses Submitted",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 152,
+    "ts_utc": "2026-02-24T17:03:06.440194+00:00",
+    "kind": "action_space",
+    "step_idx": 6,
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_6.json",
+    "field_count": 0,
+    "interaction_counts": {}
+  },
+  {
+    "seq": 153,
+    "ts_utc": "2026-02-24T17:03:06.441424+00:00",
+    "kind": "observe_state",
+    "step_idx": 6,
+    "url": "http://localhost:3000/survey/done"
+  },
+  {
+    "seq": 154,
+    "ts_utc": "2026-02-24T17:03:06.443521+00:00",
+    "kind": "plan_input",
+    "step_idx": 6,
+    "action_space_path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\action_space_6.json",
+    "action_space_field_count": 0
+  },
+  {
+    "seq": 155,
+    "ts_utc": "2026-02-24T17:03:08.824999+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 0,
+    "validation_feedback_count": 0,
+    "raw": " [\n  {\"tool\":\"fill\",\"key\":\"name\",\"value\":\"John Doe\"},\n  {\"tool\":\"fill\",\"key\":\"email\",\"value\":\"johndoe@example.com\"},\n  {\"tool\":\"select\",\"key\":\"gender\",\"value\":\"Male\"},\n  {\"tool\":\"check\",\"key\":\"hobby_1\",\"value\":\"Reading\"},\n  {\"tool\":\"set_range\",\"key\":\"age\",\"value\":30},\n  {\"tool\":\"fill\",\"key\":\"address_line_1\",\"value\":\"123 Main St\"},\n  {\"tool\":\"fill\",\"key\":\"city\",\"value\":\"Anytown\"},\n  {\"tool\":\"select\",\"key\":\"state\",\"value\":\"CA\"},\n  {\"tool\":\"click\",\"key\":\"zip_code_input\"},\n  {\"tool\":\"set_range\",\"key\":\"zip_code\",\"value\":12345},\n  {\"tool\":\"click\",\"key\":\"submit\"}\n]"
+  },
+  {
+    "seq": 156,
+    "ts_utc": "2026-02-24T17:03:08.833922+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Key not in ACTION_SPACE: {'tool': 'fill', 'key': 'name', 'value': 'John Doe'}"
+  },
+  {
+    "seq": 157,
+    "ts_utc": "2026-02-24T17:03:10.429616+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 0,
+    "validation_feedback_count": 1,
+    "raw": " [\n  {\"tool\":\"fill\",\"key\":\"firstName\",\"value\":\"John\"},\n  {\"tool\":\"fill\",\"key\":\"lastName\",\"value\":\"Doe\"},\n  {\"tool\":\"select\",\"key\":\"gender\",\"value\":\"Male\"},\n  {\"tool\":\"check\",\"key\":\"agreeTerms\",\"value\":\"I Agree to the Terms and Conditions\"},\n  {\"tool\":\"set_range\",\"key\":\"age\",\"value\":30},\n  {\"tool\":\"fill\",\"key\":\"email\",\"value\":\"johndoe@example.com\"},\n  {\"tool\":\"click\",\"key\":\"submit\"}\n]"
+  },
+  {
+    "seq": 158,
+    "ts_utc": "2026-02-24T17:03:10.434234+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Key not in ACTION_SPACE: {'tool': 'fill', 'key': 'firstName', 'value': 'John'}"
+  },
+  {
+    "seq": 159,
+    "ts_utc": "2026-02-24T17:03:12.810639+00:00",
+    "kind": "model_raw",
+    "source": "llm",
+    "mode": "llm_only",
+    "prompt_behavior_mode": "completion",
+    "action_space_field_count": 0,
+    "validation_feedback_count": 2,
+    "raw": " [\n  {\"tool\": \"fill\", \"key\": \"fullName\", \"value\": \"John Doe\"},\n  {\"tool\": \"fill\", \"key\": \"email\", \"value\": \"johndoe@example.com\"},\n  {\"tool\": \"check\", \"key\": \"gender\", \"value\": \"Male\"},\n  {\"tool\": \"fill\", \"key\": \"age\", \"value\": \"30\"},\n  {\"tool\": \"select\", \"key\": \"country\", \"value\": \"United States\"},\n  {\"tool\": \"check\", \"key\": \"agreeTerms\", \"value\": \"I agree to the terms and conditions\"},\n  {\"tool\": \"set_range\", \"key\": \"rating\", \"value\": \"5\"},\n  {\"tool\": \"fill\", \"key\": \"comments\", \"value\": \"Great service!\"},\n  {\"tool\": \"click\", \"key\": \"submit\"}\n]"
+  },
+  {
+    "seq": 160,
+    "ts_utc": "2026-02-24T17:03:12.816128+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Key not in ACTION_SPACE: {'tool': 'fill', 'key': 'fullName', 'value': 'John Doe'}"
+  },
+  {
+    "seq": 161,
+    "ts_utc": "2026-02-24T17:03:12.816128+00:00",
+    "kind": "plan_fallback",
+    "error": "Key not in ACTION_SPACE: {'tool': 'fill', 'key': 'fullName', 'value': 'John Doe'}"
+  },
+  {
+    "seq": 162,
+    "ts_utc": "2026-02-24T17:03:12.816128+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 163,
+    "ts_utc": "2026-02-24T17:03:12.832422+00:00",
+    "kind": "submission_snapshot",
+    "path": "runs\\survey_v0\\mistral-7b-instruct-v0.3\\completion\\run_51\\submission_snapshot.json",
+    "capture_stage": "run_finally",
+    "has_any_values": false,
+    "text_answer_count": 0,
+    "image_answer_count": 0
+  },
+  {
+    "seq": 164,
+    "ts_utc": "2026-02-24T17:03:12.832422+00:00",
+    "kind": "session_id",
+    "session_id": "e27cdca66e62ea3617414dac531c0b6d"
+  }
+]
