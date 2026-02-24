@@ -829,6 +829,22 @@ def _write_csv(path: Path, rows: List[Dict[str, Any]]) -> None:
             writer.writerow(row)
 
 
+def _csv_filename_for_mode(mode: str) -> str:
+    if mode == "completion":
+        return "completed_compared_runs.csv"
+    if mode == "unconstrained":
+        return "unconstrained_compare_runs.csv"
+    return f"{mode}_compare_runs.csv"
+
+
+def _csv_path_for_mode(base_path: Path, mode: str) -> Path:
+    if base_path.name == "_compare_runs.csv":
+        return base_path.with_name(_csv_filename_for_mode(mode))
+    if base_path.suffix:
+        return base_path.with_name(f"{base_path.stem}_{mode}{base_path.suffix}")
+    return base_path.with_name(f"{base_path.name}_{mode}")
+
+
 def _plot_mode_table(
     mode: str,
     records: List[RunRecord],
@@ -1008,10 +1024,19 @@ def main() -> int:
     configured_csv_default = _default_csv_out(SURVEY_VERSION, MODEL_NAME)
     effective_csv_out = _default_csv_out(SURVEY_VERSION, resolved_model_name) if CSV_OUT == configured_csv_default else CSV_OUT
     if effective_csv_out:
-        csv_rows = _build_csv_rows(records_by_mode)
-        csv_path = Path(effective_csv_out)
-        _write_csv(csv_path, csv_rows)
-        print(f"\nWrote CSV report to: {csv_path.resolve()} ({len(csv_rows)} rows)")
+        csv_base_path = Path(effective_csv_out)
+        if len(modes) > 1:
+            print("\nWrote CSV reports:")
+            for mode in modes:
+                mode_rows = _build_csv_rows({mode: records_by_mode[mode]})
+                mode_csv_path = _csv_path_for_mode(csv_base_path, mode)
+                _write_csv(mode_csv_path, mode_rows)
+                print(f"- {mode}: {mode_csv_path.resolve()} ({len(mode_rows)} rows)")
+        else:
+            csv_rows = _build_csv_rows(records_by_mode)
+            csv_path = _csv_path_for_mode(csv_base_path, modes[0]) if csv_base_path.name == "_compare_runs.csv" else csv_base_path
+            _write_csv(csv_path, csv_rows)
+            print(f"\nWrote CSV report to: {csv_path.resolve()} ({len(csv_rows)} rows)")
 
     return 0
 
