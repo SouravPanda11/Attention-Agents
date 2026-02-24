@@ -2,9 +2,10 @@ import asyncio
 import json
 import os
 import re
+import socket
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, TypedDict
 from urllib.parse import urlparse
@@ -1179,8 +1180,19 @@ async def node_act(state: AgentState, config) -> AgentState:
 
         elif tool == "click":
             old_url = ctx.page.url
-            await tool_click(ctx.page, ctx.logger, selector)
             selector_lower = selector.lower()
+            if "submit" in selector_lower:
+                try:
+                    await _capture_submission_snapshot(
+                        page=ctx.page,
+                        out_dir=ctx.out_dir,
+                        survey_version=SURVEY_VERSION,
+                        capture_stage="pre_submit_click",
+                        logger=ctx.logger,
+                    )
+                except Exception as exc:
+                    ctx.logger.log("submission_snapshot_error", {"stage": "pre_submit_click", "error": str(exc)})
+            await tool_click(ctx.page, ctx.logger, selector)
             if "next" in selector_lower or "submit" in selector_lower:
                 await ctx.page.wait_for_timeout(300)
                 try:
@@ -1351,6 +1363,158 @@ async def _read_session_id_cookie(context: Any) -> str:
     return ""
 
 
+def _parse_json_dict(value: Any) -> Dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if not isinstance(value, str):
+        return {}
+    text = value.strip()
+    if not text:
+        return {}
+    try:
+        parsed = json.loads(text)
+    except Exception:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _pick_session_value(survey_version: str, v0_value: str, v1_value: str) -> str:
+    if survey_version == "survey_v1":
+        return v1_value or v0_value
+    return v0_value or v1_value
+
+
+def _build_submission_payload_from_session_storage(
+    survey_version: str,
+    storage_dump: Dict[str, str],
+) -> Dict[str, Any]:
+    text_raw = _pick_session_value(
+        survey_version=survey_version,
+        v0_value=str(storage_dump.get("survey_text_answers") or ""),
+        v1_value=str(storage_dump.get("survey_v1_text_answers") or ""),
+    )
+    image_raw = _pick_session_value(
+        survey_version=survey_version,
+        v0_value=str(storage_dump.get("survey_image_answers") or ""),
+        v1_value=str(storage_dump.get("survey_v1_image_answers") or ""),
+    )
+    text_data = _parse_json_dict(text_raw)
+    image_data = _parse_json_dict(image_raw)
+    text_answers = text_data.get("answers")
+    image_answers = image_data.get("answers")
+
+    payload = {
+        "text_answers": text_answers if isinstance(text_answers, dict) else {},
+        "text_attention_value": str(text_data.get("attention_value") or ""),
+        "image_answers": image_answers if isinstance(image_answers, dict) else {},
+        "captcha_input": str(image_data.get("captcha_input") or ""),
+        "image_attention_choice": str(image_data.get("image_attention_choice") or ""),
+    }
+    has_any_values = bool(
+        payload["text_answers"]
+        or payload["image_answers"]
+        or payload["text_attention_value"]
+        or payload["captcha_input"]
+        or payload["image_attention_choice"]
+    )
+    payload["has_any_values"] = has_any_values
+    payload["text_answer_count"] = len(payload["text_answers"])
+    payload["image_answer_count"] = len(payload["image_answers"])
+    return payload
+
+
+async def _capture_submission_snapshot(
+    page: Any,
+    out_dir: Path,
+    survey_version: str,
+    capture_stage: str,
+    logger: TraceLogger,
+) -> Path:
+    snapshot_path = out_dir / "submission_snapshot.json"
+    dump: Dict[str, Any]
+    try:
+        dump = await page.evaluate(
+            """() => {
+                const keys = [
+                    "survey_text_answers",
+                    "survey_image_answers",
+                    "survey_v1_text_answers",
+                    "survey_v1_image_answers"
+                ];
+                const out = {};
+                for (const key of keys) {
+                    let value = "";
+                    try {
+                        value = sessionStorage.getItem(key) || "";
+                    } catch (_) {
+                        value = "";
+                    }
+                    out[key] = value;
+                }
+                return out;
+            }"""
+        )
+    except Exception:
+        dump = {
+            "survey_text_answers": "",
+            "survey_image_answers": "",
+            "survey_v1_text_answers": "",
+            "survey_v1_image_answers": "",
+        }
+
+    storage_dump = {k: str(v or "") for k, v in (dump or {}).items()}
+    normalized_payload = _build_submission_payload_from_session_storage(
+        survey_version=survey_version,
+        storage_dump=storage_dump,
+    )
+    capture = {
+        "captured_at_utc": datetime.now(timezone.utc).isoformat(),
+        "capture_stage": capture_stage,
+        "url": str(page.url),
+        "survey_version": survey_version,
+        "raw_session_storage": storage_dump,
+        "normalized_payload": normalized_payload,
+    }
+
+    existing: Dict[str, Any] = {}
+    if snapshot_path.exists():
+        try:
+            existing = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        except Exception:
+            existing = {}
+
+    captures = existing.get("captures") if isinstance(existing.get("captures"), list) else []
+    captures = [item for item in captures if isinstance(item, dict)]
+    captures.append(capture)
+
+    best_capture: Dict[str, Any] | None = None
+    for item in captures:
+        payload = item.get("normalized_payload") if isinstance(item.get("normalized_payload"), dict) else {}
+        if payload.get("has_any_values"):
+            best_capture = item
+    if best_capture is None and captures:
+        best_capture = captures[-1]
+
+    snapshot_doc = {
+        "survey_version": survey_version,
+        "run_dir": str(out_dir),
+        "captures": captures,
+        "best_capture": best_capture or {},
+    }
+    snapshot_path.write_text(json.dumps(snapshot_doc, indent=2), encoding="utf-8")
+    logger.log(
+        "submission_snapshot",
+        {
+            "path": str(snapshot_path),
+            "capture_stage": capture_stage,
+            "has_any_values": bool(normalized_payload.get("has_any_values")),
+            "text_answer_count": int(normalized_payload.get("text_answer_count") or 0),
+            "image_answer_count": int(normalized_payload.get("image_answer_count") or 0),
+        },
+    )
+    return snapshot_path
+
+
 async def main(headless: bool = False) -> Path:
     brain = _build_brain()
     prompt_behavior_mode = getattr(brain, "prompt_behavior_mode", "unknown")
@@ -1367,6 +1531,7 @@ async def main(headless: bool = False) -> Path:
         page = await context.new_page()
 
         logger = TraceLogger(out_dir)
+        logger.set_run_metadata({"machine_name": socket.gethostname()})
         if hasattr(brain, "debug_hook"):
             brain.debug_hook = logger.log
         run_error: BaseException | None = None
@@ -1397,6 +1562,16 @@ async def main(headless: bool = False) -> Path:
             run_error = exc
             logger.log("run_error", {"error_type": type(exc).__name__, "error": str(exc)})
         finally:
+            try:
+                await _capture_submission_snapshot(
+                    page=page,
+                    out_dir=out_dir,
+                    survey_version=SURVEY_VERSION,
+                    capture_stage="run_finally",
+                    logger=logger,
+                )
+            except Exception as exc:
+                logger.log("submission_snapshot_error", {"stage": "run_finally", "error": str(exc)})
             session_id = await _read_session_id_cookie(context)
             if session_id:
                 logger.set_run_metadata({"session_id": session_id})

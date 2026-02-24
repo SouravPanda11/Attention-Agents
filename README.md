@@ -68,6 +68,9 @@ Run outputs are saved under:
 
 `Agent/runs/survey_v0/<MODEL_NAME>/<completion|unconstrained>/run_*`
 
+Each run now includes `submission_snapshot.json` with normalized response payload
+captured from browser session storage for offline aggregation/debugging.
+
 ## Useful Commands
 
 Run multiple times:
@@ -84,4 +87,18 @@ Compare runs:
 cd Agent
 .venv\Scripts\activate
 python compare_runs.py
+```
+
+Aggregate all run artifacts into a local DB (after pulling runs from workers):
+
+```powershell
+cd Agent
+.venv\Scripts\activate
+python ingest_runs.py --db-path runs_aggregate.sqlite
+```
+
+If you only want runs that have `submission_snapshot.json`:
+
+```powershell
+python ingest_runs.py --db-path runs_aggregate.sqlite --snapshot-only
 ```
