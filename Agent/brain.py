@@ -98,6 +98,7 @@ Rules:
 - For select fields, value must match one option value from ACTION_SPACE (not placeholder).
 - In completion mode, partial plans are invalid: include answers for all non-navigation question items before any Next/Submit action.
 - In completion mode, after all required answerable items are included, include exactly one final click on `next` or `submit` (if available) as the last step.
+- If DRAFT_PLAN is provided, verify it against ACTION_SPACE and the screenshot. If it is valid/complete, you may return it unchanged; otherwise generate your own valid plan.
 - Never emit selectors directly unless VALIDATION_FEEDBACK requests it.
 - If VALIDATION_FEEDBACK is provided, correct the plan accordingly and avoid repeating invalid patterns.
 - No markdown, no prose, only valid JSON array.
@@ -457,6 +458,7 @@ class LLMVLMBasedBrain(Brain):
         self.prompt_behavior_mode = PROMPT_BEHAVIOR_MODE
         self.debug_hook: Optional[Callable[[str, Dict[str, Any]], None]] = None
         self.last_plan_provenance: Dict[str, Any] = {}
+        self._last_vlm_used_draft_fallback = False
         self.llm_client = OpenAICompatChatClient(
             api_key=config.llm.api_key,
             base_url=config.llm.base_url,
@@ -541,8 +543,24 @@ class LLMVLMBasedBrain(Brain):
         draft_plan: Optional[List[Dict[str, Any]]] = None,
         validation_feedback: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
+        self._last_vlm_used_draft_fallback = False
         action_space = action_space or {}
         action_meta = action_space.get("meta") or {}
+        draft_was_provided = draft_plan is not None
+        fallback_plan: Optional[List[Dict[str, Any]]] = None
+        if draft_was_provided:
+            try:
+                # Only keep draft fallback if it is still valid for the current ACTION_SPACE.
+                fallback_plan = _validate_plan(draft_plan or [], schema=schema, action_space=action_space)
+            except Exception as exc:
+                self._debug(
+                    "draft_plan_invalid",
+                    {
+                        "source": "vlm",
+                        "mode": self.mode,
+                        "reason": str(exc),
+                    },
+                )
         user_content: List[Dict[str, Any]] = [
             {"type": "text", "text": f"ACTION_SPACE_META:\n{json.dumps(action_meta, indent=2)}"},
             {"type": "text", "text": f"ACTION_SPACE:\n{json.dumps(action_space, indent=2)}"},
@@ -560,8 +578,15 @@ class LLMVLMBasedBrain(Brain):
                 }
             )
 
-        if draft_plan is not None:
-            user_content.append({"type": "text", "text": f"DRAFT_PLAN:\n{json.dumps(draft_plan, indent=2)}"})
+        if fallback_plan is not None:
+            user_content.append({"type": "text", "text": f"DRAFT_PLAN:\n{json.dumps(fallback_plan, indent=2)}"})
+        elif draft_was_provided:
+            user_content.append(
+                {
+                    "type": "text",
+                    "text": "DRAFT_PLAN_STATUS: provided draft is invalid for current ACTION_SPACE; ignore it and produce a fresh valid plan from screenshot + ACTION_SPACE.",
+                }
+            )
         if validation_feedback:
             joined = "\n".join(f"- {msg}" for msg in validation_feedback)
             user_content.append({"type": "text", "text": f"VALIDATION_FEEDBACK:\n{joined}"})
@@ -581,15 +606,65 @@ class LLMVLMBasedBrain(Brain):
                 "raw": raw,
                 "action_space_field_count": len(action_space.get("fields") or []),
                 "has_screenshot": bool(screenshot_path and screenshot_path.exists()),
-                "has_draft_plan": bool(draft_plan is not None),
+                "has_draft_plan": bool(draft_was_provided),
+                "has_valid_draft_plan": bool(fallback_plan is not None),
                 "validation_feedback_count": len(validation_feedback or []),
             },
         )
         parsed = _safe_json_loads(raw)
         if parsed is None:
+            if fallback_plan is not None:
+                self._last_vlm_used_draft_fallback = True
+                self._debug(
+                    "model_fallback_to_draft",
+                    {
+                        "source": "vlm",
+                        "mode": self.mode,
+                        "reason": "VLM did not return JSON array",
+                        "fallback_plan_size": len(fallback_plan),
+                    },
+                )
+                self._debug(
+                    "model_plan",
+                    {
+                        "source": "llm_draft_fallback",
+                        "mode": self.mode,
+                        "prompt_behavior_mode": self.prompt_behavior_mode,
+                        "has_draft_plan": bool(draft_was_provided),
+                        "plan_size": len(fallback_plan),
+                        "plan": fallback_plan,
+                    },
+                )
+                return fallback_plan
             raise ValueError(f"VLM did not return JSON array. Raw:\n{raw}")
 
-        validated = _validate_plan(parsed, schema=schema, action_space=action_space)
+        try:
+            validated = _validate_plan(parsed, schema=schema, action_space=action_space)
+        except Exception as exc:
+            if fallback_plan is not None:
+                self._last_vlm_used_draft_fallback = True
+                self._debug(
+                    "model_fallback_to_draft",
+                    {
+                        "source": "vlm",
+                        "mode": self.mode,
+                        "reason": str(exc),
+                        "fallback_plan_size": len(fallback_plan),
+                    },
+                )
+                self._debug(
+                    "model_plan",
+                    {
+                        "source": "llm_draft_fallback",
+                        "mode": self.mode,
+                        "prompt_behavior_mode": self.prompt_behavior_mode,
+                        "has_draft_plan": bool(draft_was_provided),
+                        "plan_size": len(fallback_plan),
+                        "plan": fallback_plan,
+                    },
+                )
+                return fallback_plan
+            raise
         self._debug(
             "model_plan",
             {
@@ -653,10 +728,12 @@ class LLMVLMBasedBrain(Brain):
             draft_plan=llm_draft,
             validation_feedback=validation_feedback,
         )
+        used_draft_fallback = bool(getattr(self, "_last_vlm_used_draft_fallback", False))
         self.last_plan_provenance = {
             "planner_mode": self.mode,
-            "final_source": "vlm",
+            "final_source": "llm_draft_fallback" if used_draft_fallback else "vlm",
             "llm_draft_available": True,
+            "llm_draft_fallback_used": used_draft_fallback,
             "llm_draft_step_count": len(llm_draft),
             "final_plan_step_count": len(final_plan),
             "llm_draft_plan": llm_draft,
