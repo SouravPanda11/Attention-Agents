@@ -1,0 +1,806 @@
+[
+  {
+    "seq": 1,
+    "ts_utc": "2026-02-24T23:11:20.602562+00:00",
+    "kind": "run_context",
+    "survey_version": "survey_v0",
+    "model_name": "minicpm-v-2_6",
+    "prompt_behavior_mode": "completion",
+    "planner_mode": "vlm_only",
+    "required_tag": "NRT",
+    "target": "http://localhost:3000/survey",
+    "headless": true
+  },
+  {
+    "seq": 2,
+    "ts_utc": "2026-02-24T23:11:21.397367+00:00",
+    "kind": "goto",
+    "url": "http://localhost:3000/survey",
+    "current_url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 3,
+    "ts_utc": "2026-02-24T23:11:21.419491+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 4,
+    "ts_utc": "2026-02-24T23:11:21.431586+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 5,
+    "ts_utc": "2026-02-24T23:11:21.515681+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\shot_1.png",
+    "full_page": true
+  },
+  {
+    "seq": 6,
+    "ts_utc": "2026-02-24T23:11:21.518681+00:00",
+    "kind": "page_marker",
+    "step_idx": 1,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 7,
+    "ts_utc": "2026-02-24T23:11:21.520681+00:00",
+    "kind": "action_space",
+    "step_idx": 1,
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_1.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 8,
+    "ts_utc": "2026-02-24T23:11:21.521681+00:00",
+    "kind": "page_changed",
+    "old_url": "http://localhost:3000/survey",
+    "new_url": "http://localhost:3000/survey/text",
+    "reset_plan_feedback": true
+  },
+  {
+    "seq": 9,
+    "ts_utc": "2026-02-24T23:11:21.521681+00:00",
+    "kind": "observe_state",
+    "step_idx": 1,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 10,
+    "ts_utc": "2026-02-24T23:11:21.522681+00:00",
+    "kind": "plan_input",
+    "step_idx": 1,
+    "action_space_path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_1.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 11,
+    "ts_utc": "2026-02-24T23:11:22.521406+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[\n{\"tool\":\"click\",\"key\":\"next\"}\n]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 0
+  },
+  {
+    "seq": 12,
+    "ts_utc": "2026-02-24T23:11:22.521406+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 13,
+    "ts_utc": "2026-02-24T23:11:24.105059+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[{\"tool\":\"fill\",\"key\":\"<field_key>\",\"value\":\"<string>\"}, {\"tool\":\"select\",\"key\":\"<field_key>\",\"value\":\"<option_value>\"}, {\"tool\":\"check\",\"key\":\"<field_key>\",\"value\":\"<option_label_or_value>\"}, {\"tool\":\"set_range\",\"key\":\"<field_key>\",\"value\":<number>}, {\"tool\":\"click\",\"key\":\"<field_key>\"}]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 1
+  },
+  {
+    "seq": 14,
+    "ts_utc": "2026-02-24T23:11:24.105059+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "VLM did not return JSON array. Raw:\n[{\"tool\":\"fill\",\"key\":\"<field_key>\",\"value\":\"<string>\"}, {\"tool\":\"select\",\"key\":\"<field_key>\",\"value\":\"<option_value>\"}, {\"tool\":\"check\",\"key\":\"<field_key>\",\"value\":\"<option_label_or_value>\"}, {\"tool\":\"set_range\",\"key\":\"<field_key>\",\"value\":<number>}, {\"tool\":\"click\",\"key\":\"<field_key>\"}]"
+  },
+  {
+    "seq": 15,
+    "ts_utc": "2026-02-24T23:11:27.188285+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "Here is the JSON array of action intents based on your inputs and validation feedback:\n```json\n[\n  {\n    \"tool\": \"fill\",\n    \"key\": \"age\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"follow_by_age\",\n    \"value\": \"highlights_only\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"employment_status\",\n    \"value\": \"not_much\"\n  },\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"watch_time\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"fill\",\n    \"key\": \"attention_text_mid\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"country_satisfaction\",\n    \"value\": \"1\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"future_interest\",\n    \"value\": \"likely\"\n  },\n  {\n    \"tool\": \"fill\",\n    \"key\": \"favorite_moment\",\n    \"value\": \"\"\n  }\n]\n```",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 2
+  },
+  {
+    "seq": 16,
+    "ts_utc": "2026-02-24T23:11:27.188285+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}"
+  },
+  {
+    "seq": 17,
+    "ts_utc": "2026-02-24T23:11:27.189284+00:00",
+    "kind": "plan_fallback",
+    "error": "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}"
+  },
+  {
+    "seq": 18,
+    "ts_utc": "2026-02-24T23:11:27.189284+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 19,
+    "ts_utc": "2026-02-24T23:11:27.193283+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 20,
+    "ts_utc": "2026-02-24T23:11:27.195283+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 21,
+    "ts_utc": "2026-02-24T23:11:27.263312+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\shot_2.png",
+    "full_page": true
+  },
+  {
+    "seq": 22,
+    "ts_utc": "2026-02-24T23:11:27.266314+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 23,
+    "ts_utc": "2026-02-24T23:11:27.276896+00:00",
+    "kind": "action_space",
+    "step_idx": 2,
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_2.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 24,
+    "ts_utc": "2026-02-24T23:11:27.276896+00:00",
+    "kind": "observe_state",
+    "step_idx": 2,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 25,
+    "ts_utc": "2026-02-24T23:11:27.277911+00:00",
+    "kind": "plan_input",
+    "step_idx": 2,
+    "action_space_path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_2.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 26,
+    "ts_utc": "2026-02-24T23:11:27.278912+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']",
+      "VLM did not return JSON array. Raw:\n[{\"tool\":\"fill\",\"key\":\"<field_key>\",\"value\":\"<string>\"}, {\"tool\":\"select\",\"key\":\"<field_key>\",\"value\":\"<option_value>\"}, {\"tool\":\"check\",\"key\":\"<field_key>\",\"value\":\"<option_label_or_value>\"}, {\"tool\":\"set_range\",\"key\":\"<field_key>\",\"value\":<number>}, {\"tool\":\"click\",\"key\":\"<field_key>\"}]",
+      "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}",
+      "Completion mode requires exactly one final navigation click (next/submit); found 0."
+    ]
+  },
+  {
+    "seq": 27,
+    "ts_utc": "2026-02-24T23:11:31.218936+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "Here is the JSON array with all answerable items included:\n```json\n[\n  {\n    \"tool\": \"select\",\n    \"key\": \"trust_coverage\",\n    \"value\": \"Strongly agree\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"mood_impact\",\n    \"value\": \"Strongly agree\"\n  },\n  {\n    \"tool\": \"fill\",\n    \"key\": \"age\",\n    \"value\": \"30\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"follow_by_age\",\n    \"value\": \"highlights_only\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"employment_status\",\n    \"value\": \"self_employed\"\n  },\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"watch_time\",\n    \"value\": \"5\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"attention_text_mid\",\n    \"value\": \"Somewhat\"\n  },\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"country_satisfaction\",\n    \"value\": \"8.0\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"future_interest\",\n    \"value\": \"likely\"\n  },\n  {\n    \"tool\": \"fill\",\n    \"key\": \"favorite_moment\",\n    \"value\": \"The gold medal win in the women's gymnastics team final.\"\n  }\n]\n```",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 28,
+    "ts_utc": "2026-02-24T23:11:31.219942+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires exactly one final navigation click (next/submit); found 0."
+  },
+  {
+    "seq": 29,
+    "ts_utc": "2026-02-24T23:11:32.112764+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[{\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": \"2\"}]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 30,
+    "ts_utc": "2026-02-24T23:11:32.113763+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'employment_status', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 31,
+    "ts_utc": "2026-02-24T23:11:34.507526+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "Here is the updated plan with answers for each question item visible on the current page:\n```json\n[\n  {\"tool\": \"fill\", \"key\": \"age\", \"value\": \"\"},\n  {\"tool\": \"select\", \"key\": \"follow_by_age\", \"value\": \"highlights_only\"},\n  {\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": \"1.0\"},\n  {\"tool\": \"check\", \"key\": \"trust_coverage\", \"value\": \"Strongly agree\"},\n  {\"tool\": \"select\", \"key\": \"mood_impact\", \"value\": \"Strongly agree\"},\n  {\"tool\": \"fill\", \"key\": \"age\", \"value\": \"\"},\n  {\"tool\": \"click\", \"key\": \"next\"}\n]\n```",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 32,
+    "ts_utc": "2026-02-24T23:11:34.507526+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}"
+  },
+  {
+    "seq": 33,
+    "ts_utc": "2026-02-24T23:11:34.508526+00:00",
+    "kind": "plan_fallback",
+    "error": "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}"
+  },
+  {
+    "seq": 34,
+    "ts_utc": "2026-02-24T23:11:34.508526+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 35,
+    "ts_utc": "2026-02-24T23:11:34.511618+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 36,
+    "ts_utc": "2026-02-24T23:11:34.515617+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 37,
+    "ts_utc": "2026-02-24T23:11:34.579696+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\shot_3.png",
+    "full_page": true
+  },
+  {
+    "seq": 38,
+    "ts_utc": "2026-02-24T23:11:34.581989+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 39,
+    "ts_utc": "2026-02-24T23:11:34.584996+00:00",
+    "kind": "action_space",
+    "step_idx": 3,
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_3.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 40,
+    "ts_utc": "2026-02-24T23:11:34.584996+00:00",
+    "kind": "observe_state",
+    "step_idx": 3,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 41,
+    "ts_utc": "2026-02-24T23:11:34.586222+00:00",
+    "kind": "plan_input",
+    "step_idx": 3,
+    "action_space_path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_3.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 42,
+    "ts_utc": "2026-02-24T23:11:34.587226+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires exactly one final navigation click (next/submit); found 0.",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'employment_status', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']",
+      "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+    ]
+  },
+  {
+    "seq": 43,
+    "ts_utc": "2026-02-24T23:11:35.405239+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[{\"tool\": \"click\", \"key\": \"next\"}]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 44,
+    "ts_utc": "2026-02-24T23:11:35.406332+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 45,
+    "ts_utc": "2026-02-24T23:11:37.417892+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[\n  {\"tool\": \"fill\", \"key\": \"age\", \"value\": \"18\"},\n  {\"tool\": \"select\", \"key\": \"follow_by_age\", \"value\": \"highlights_only\"},\n  {\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": \"3.5\"},\n  {\"tool\": \"fill\", \"key\": \"attention_text_mid\", \"value\": \"somewhat\"},\n  {\"tool\": \"select\", \"key\": \"country_satisfaction\", \"value\": \"Strongly agree\"},\n  {\"tool\": \"click\", \"key\": \"next\"}\n]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 46,
+    "ts_utc": "2026-02-24T23:11:37.417892+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Missing/invalid numeric value for set_range: {'tool': 'select', 'key': 'country_satisfaction', 'value': 'Strongly agree'}"
+  },
+  {
+    "seq": 47,
+    "ts_utc": "2026-02-24T23:11:40.006366+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[\n  {\"tool\": \"fill\", \"key\": \"age\", \"value\": \"\"},\n  {\"tool\": \"select\", \"key\": \"follow_by_age\", \"value\": \"highlights_only\"},\n  {\"tool\": \"select\", \"key\": \"employment_status\", \"value\": \"self_employed\"},\n  {\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": \"\"},\n  {\"tool\": \"select\", \"key\": \"attention_text_mid\", \"value\": \"Strongly agree\"},\n  {\"tool\": \"set_range\", \"key\": \"country_satisfaction\", \"value\": \"\"},\n  {\"tool\": \"select\", \"key\": \"future_interest\", \"value\": \"likely\"},\n  {\"tool\": \"fill\", \"key\": \"favorite_moment\", \"value\": \"\"},\n  {\"tool\": \"click\", \"key\": \"next\"}\n]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 48,
+    "ts_utc": "2026-02-24T23:11:40.007364+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}"
+  },
+  {
+    "seq": 49,
+    "ts_utc": "2026-02-24T23:11:40.007364+00:00",
+    "kind": "plan_fallback",
+    "error": "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}"
+  },
+  {
+    "seq": 50,
+    "ts_utc": "2026-02-24T23:11:40.008639+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 51,
+    "ts_utc": "2026-02-24T23:11:40.011644+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 52,
+    "ts_utc": "2026-02-24T23:11:40.013858+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 53,
+    "ts_utc": "2026-02-24T23:11:40.080131+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\shot_4.png",
+    "full_page": true
+  },
+  {
+    "seq": 54,
+    "ts_utc": "2026-02-24T23:11:40.083138+00:00",
+    "kind": "page_marker",
+    "step_idx": 4,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 55,
+    "ts_utc": "2026-02-24T23:11:40.086130+00:00",
+    "kind": "action_space",
+    "step_idx": 4,
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_4.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 56,
+    "ts_utc": "2026-02-24T23:11:40.087130+00:00",
+    "kind": "observe_state",
+    "step_idx": 4,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 57,
+    "ts_utc": "2026-02-24T23:11:40.088130+00:00",
+    "kind": "plan_input",
+    "step_idx": 4,
+    "action_space_path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_4.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 58,
+    "ts_utc": "2026-02-24T23:11:40.088130+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']",
+      "Missing/invalid numeric value for set_range: {'tool': 'select', 'key': 'country_satisfaction', 'value': 'Strongly agree'}",
+      "Missing/invalid value for fill: {'tool': 'fill', 'key': 'age', 'value': ''}",
+      "VLM did not return JSON array. Raw:\n[\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"watch_time\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"employment_status\",\n    \"value\": ''\n  },\n  {\n    \"tool\": \"fill\",\n    \"key\": \"age\",\n    \"value\": '1'\n  },\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"country_satisfaction\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"follow_by_age\",\n    \"value\": ''\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"attention_text_mid\",\n    \"value\": 'Strongly agree'\n  },\n  {\n    \"tool\": \"click\",\n    \"key\": \"next\"\n  }\n]"
+    ]
+  },
+  {
+    "seq": 59,
+    "ts_utc": "2026-02-24T23:11:42.599978+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"watch_time\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"employment_status\",\n    \"value\": ''\n  },\n  {\n    \"tool\": \"fill\",\n    \"key\": \"age\",\n    \"value\": '1'\n  },\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"country_satisfaction\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"follow_by_age\",\n    \"value\": ''\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"attention_text_mid\",\n    \"value\": 'Strongly agree'\n  },\n  {\n    \"tool\": \"click\",\n    \"key\": \"next\"\n  }\n]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 60,
+    "ts_utc": "2026-02-24T23:11:42.599978+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "VLM did not return JSON array. Raw:\n[\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"watch_time\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"employment_status\",\n    \"value\": ''\n  },\n  {\n    \"tool\": \"fill\",\n    \"key\": \"age\",\n    \"value\": '1'\n  },\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"country_satisfaction\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"follow_by_age\",\n    \"value\": ''\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"attention_text_mid\",\n    \"value\": 'Strongly agree'\n  },\n  {\n    \"tool\": \"click\",\n    \"key\": \"next\"\n  }\n]"
+  },
+  {
+    "seq": 61,
+    "ts_utc": "2026-02-24T23:11:43.470913+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[{\"tool\":\"fill\",\"key\":\"age\",\"value\":\"1\"}]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 62,
+    "ts_utc": "2026-02-24T23:11:43.471911+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Number value below min constraint: {'tool': 'fill', 'key': 'age', 'value': '1'}"
+  },
+  {
+    "seq": 63,
+    "ts_utc": "2026-02-24T23:11:44.477602+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "Based on the validation feedback, here is a corrected plan:\n[{\"tool\":\"select\",\"key\":\"age\",\"value\":\"20\"}]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 64,
+    "ts_utc": "2026-02-24T23:11:44.478602+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 65,
+    "ts_utc": "2026-02-24T23:11:44.478602+00:00",
+    "kind": "plan_fallback",
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 66,
+    "ts_utc": "2026-02-24T23:11:44.479601+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 67,
+    "ts_utc": "2026-02-24T23:11:44.482689+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 68,
+    "ts_utc": "2026-02-24T23:11:44.485690+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 69,
+    "ts_utc": "2026-02-24T23:11:44.563825+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\shot_5.png",
+    "full_page": true
+  },
+  {
+    "seq": 70,
+    "ts_utc": "2026-02-24T23:11:44.566823+00:00",
+    "kind": "page_marker",
+    "step_idx": 5,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 71,
+    "ts_utc": "2026-02-24T23:11:44.568830+00:00",
+    "kind": "action_space",
+    "step_idx": 5,
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_5.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 72,
+    "ts_utc": "2026-02-24T23:11:44.569823+00:00",
+    "kind": "observe_state",
+    "step_idx": 5,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 73,
+    "ts_utc": "2026-02-24T23:11:44.570823+00:00",
+    "kind": "plan_input",
+    "step_idx": 5,
+    "action_space_path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\action_space_5.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 74,
+    "ts_utc": "2026-02-24T23:11:44.571822+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "VLM did not return JSON array. Raw:\n[\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"watch_time\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"employment_status\",\n    \"value\": ''\n  },\n  {\n    \"tool\": \"fill\",\n    \"key\": \"age\",\n    \"value\": '1'\n  },\n  {\n    \"tool\": \"set_range\",\n    \"key\": \"country_satisfaction\",\n    \"value\": \"\"\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"follow_by_age\",\n    \"value\": ''\n  },\n  {\n    \"tool\": \"select\",\n    \"key\": \"attention_text_mid\",\n    \"value\": 'Strongly agree'\n  },\n  {\n    \"tool\": \"click\",\n    \"key\": \"next\"\n  }\n]",
+      "Number value below min constraint: {'tool': 'fill', 'key': 'age', 'value': '1'}",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']",
+      "Number value below min constraint: {'tool': 'fill', 'key': 'age', 'value': '1'}"
+    ]
+  },
+  {
+    "seq": 75,
+    "ts_utc": "2026-02-24T23:11:46.315444+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "Based on the validation feedback, here is a revised plan:\n```json\n[\n  {\"tool\": \"fill\", \"key\": \"age\", \"value\": \"1\"},\n  {\"tool\": \"select\", \"key\": \"follow_by_age\", \"value\": \"highlights_only\"},\n  {\"tool\": \"set_range\", \"key\": \"watch_time\", \"value\": \"2\"},\n  {\"tool\": \"click\", \"key\": \"next\"}\n]\n```",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 76,
+    "ts_utc": "2026-02-24T23:11:46.316446+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Number value below min constraint: {'tool': 'fill', 'key': 'age', 'value': '1'}"
+  },
+  {
+    "seq": 77,
+    "ts_utc": "2026-02-24T23:11:47.124161+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[{\"tool\":\"fill\",\"key\":\"age\",\"value\":\"20\"}]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 78,
+    "ts_utc": "2026-02-24T23:11:47.125159+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'follow_by_age', 'employment_status', 'watch_time', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 79,
+    "ts_utc": "2026-02-24T23:11:48.140551+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": "[\n  {\"tool\": \"fill\", \"key\": \"age\", \"value\": \"1\"},\n  {\"tool\": \"click\", \"key\": \"next\"}\n]",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 80,
+    "ts_utc": "2026-02-24T23:11:48.141619+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "Number value below min constraint: {'tool': 'fill', 'key': 'age', 'value': '1'}"
+  },
+  {
+    "seq": 81,
+    "ts_utc": "2026-02-24T23:11:48.141619+00:00",
+    "kind": "plan_fallback",
+    "error": "Number value below min constraint: {'tool': 'fill', 'key': 'age', 'value': '1'}"
+  },
+  {
+    "seq": 82,
+    "ts_utc": "2026-02-24T23:11:48.142620+00:00",
+    "kind": "plan_stalled",
+    "empty_plan_streak": 5,
+    "max_empty_plan_streak": 5,
+    "url": "http://localhost:3000/survey/text"
+  },
+  {
+    "seq": 83,
+    "ts_utc": "2026-02-24T23:11:48.143620+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 84,
+    "ts_utc": "2026-02-24T23:11:48.147622+00:00",
+    "kind": "submission_snapshot",
+    "path": "runs\\survey_v0\\minicpm-v-2_6\\completion\\run_68\\submission_snapshot.json",
+    "capture_stage": "run_finally",
+    "has_any_values": false,
+    "text_answer_count": 0,
+    "image_answer_count": 0
+  },
+  {
+    "seq": 85,
+    "ts_utc": "2026-02-24T23:11:48.149621+00:00",
+    "kind": "session_id",
+    "session_id": "f137d17a5aa39b6ba760d284494fcd88"
+  }
+]
