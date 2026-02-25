@@ -70,6 +70,9 @@ Run outputs are saved under:
 
 Each run now includes `submission_snapshot.json` with normalized response payload
 captured from browser session storage for offline aggregation/debugging.
+For planner attribution, inspect:
+- `trace.json` events: `model_raw`, `model_plan`, `plan_provenance`, `plan`
+- `run_summary.json` keys: `model_raw_source_counts`, `model_plan_source_counts`, `accepted_plan_source_counts`
 
 ## Useful Commands
 

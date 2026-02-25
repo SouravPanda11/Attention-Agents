@@ -70,6 +70,7 @@ class AgentState(TypedDict, total=False):
     action_space: Dict[str, Any]
     action_space_path: str
     plan: List[Dict[str, Any]]
+    plan_provenance: Dict[str, Any]
     plan_feedback: List[str]
     step_idx: int
     max_steps: int
@@ -1003,6 +1004,7 @@ async def node_plan(state: AgentState, config) -> AgentState:
         ctx.logger.log("plan_feedback_used", {"count": len(feedback), "feedback": feedback})
 
     plan: List[Dict[str, Any]] = []
+    plan_provenance: Dict[str, Any] = {}
     last_error = ""
     for attempt in range(MAX_PLAN_RETRIES + 1):
         attempt_feedback = feedback[-MAX_FEEDBACK_MEMORY:]
@@ -1024,6 +1026,13 @@ async def node_plan(state: AgentState, config) -> AgentState:
                 screenshot_path=Path(screenshot_path) if screenshot_path else None,
                 validation_feedback=attempt_feedback,
             )
+            raw_provenance = getattr(ctx.brain, "last_plan_provenance", {})
+            if isinstance(raw_provenance, dict):
+                plan_provenance = dict(raw_provenance)
+                if plan_provenance:
+                    ctx.logger.log("plan_provenance", {"attempt": attempt + 1, **plan_provenance})
+            else:
+                plan_provenance = {}
             if attempt > 0:
                 ctx.logger.log("plan_recovered", {"attempt": attempt + 1, "plan_size": len(plan)})
             _emit_progress(
@@ -1056,6 +1065,18 @@ async def node_plan(state: AgentState, config) -> AgentState:
         ctx.logger.log("plan_fallback", {"error": last_error or "unknown_planning_error"})
         plan = []
 
+    plan_event_payload: Dict[str, Any] = {"steps": plan}
+    if plan_provenance:
+        plan_event_payload.update(
+            {
+                "planner_mode": str(plan_provenance.get("planner_mode") or ""),
+                "final_plan_source": str(plan_provenance.get("final_source") or ""),
+                "llm_draft_available": bool(plan_provenance.get("llm_draft_available")),
+                "llm_draft_step_count": int(plan_provenance.get("llm_draft_step_count") or 0),
+                "final_plan_step_count": int(plan_provenance.get("final_plan_step_count") or len(plan)),
+            }
+        )
+
     empty_plan_streak = int(state.get("empty_plan_streak", 0))
     if plan:
         empty_plan_streak = 0
@@ -1071,19 +1092,26 @@ async def node_plan(state: AgentState, config) -> AgentState:
                 "url": state.get("url", ""),
             },
         )
-        ctx.logger.log("plan", {"steps": plan})
+        ctx.logger.log("plan", plan_event_payload)
         return {
             **state,
             "plan": plan,
+            "plan_provenance": plan_provenance,
             "plan_feedback": feedback,
             "empty_plan_streak": empty_plan_streak,
             "done": True,
             "error": "empty_plan_streak_exceeded",
         }
 
-    ctx.logger.log("plan", {"steps": plan})
+    ctx.logger.log("plan", plan_event_payload)
     _emit_progress(ctx, "plan:end", state, {"plan_size": len(plan)})
-    return {**state, "plan": plan, "plan_feedback": feedback, "empty_plan_streak": empty_plan_streak}
+    return {
+        **state,
+        "plan": plan,
+        "plan_provenance": plan_provenance,
+        "plan_feedback": feedback,
+        "empty_plan_streak": empty_plan_streak,
+    }
 
 
 async def node_act(state: AgentState, config) -> AgentState:
@@ -1094,6 +1122,9 @@ async def node_act(state: AgentState, config) -> AgentState:
         return {**state, "done": True, "url": current_url}
 
     plan = state.get("plan") or []
+    plan_provenance = state.get("plan_provenance") or {}
+    if not isinstance(plan_provenance, dict):
+        plan_provenance = {}
     schema = state.get("parsed") or {}
     selectors_map = schema.get("selectors", {})
     fields = schema.get("fields", [])
@@ -1166,6 +1197,9 @@ async def node_act(state: AgentState, config) -> AgentState:
                 "alt": step_field.get("alt"),
                 "option_label": option_meta.get("option_label"),
                 "option_value": option_meta.get("option_value"),
+                "plan_final_source": str(plan_provenance.get("final_source") or ""),
+                "planner_mode": str(plan_provenance.get("planner_mode") or ""),
+                "llm_draft_step_count": int(plan_provenance.get("llm_draft_step_count") or 0),
             },
         )
 

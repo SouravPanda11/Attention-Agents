@@ -61,6 +61,9 @@ class TraceLogger:
                 "alt": step.get("alt"),
                 "option_label": step.get("option_label"),
                 "option_value": step.get("option_value"),
+                "plan_final_source": step.get("plan_final_source"),
+                "planner_mode": step.get("planner_mode"),
+                "llm_draft_step_count": step.get("llm_draft_step_count"),
             }
             for step in self.steps
             if step.get("kind") == "exec_step"
@@ -69,15 +72,58 @@ class TraceLogger:
             {
                 "seq": step.get("seq"),
                 "plan_size": len(step.get("steps") or []),
+                "planner_mode": step.get("planner_mode"),
+                "final_plan_source": step.get("final_plan_source"),
+                "llm_draft_available": step.get("llm_draft_available"),
+                "llm_draft_step_count": step.get("llm_draft_step_count"),
+                "final_plan_step_count": step.get("final_plan_step_count"),
             }
             for step in self.steps
             if step.get("kind") == "plan"
+        ]
+        model_raw_source_counts = Counter(
+            str(step.get("source") or "unknown")
+            for step in self.steps
+            if step.get("kind") == "model_raw"
+        )
+        model_plan_source_counts = Counter(
+            str(step.get("source") or "unknown")
+            for step in self.steps
+            if step.get("kind") == "model_plan"
+        )
+        accepted_plan_source_counts = Counter(
+            str(step.get("final_plan_source") or "unknown")
+            for step in self.steps
+            if step.get("kind") == "plan"
+        )
+        accepted_planner_mode_counts = Counter(
+            str(step.get("planner_mode") or "unknown")
+            for step in self.steps
+            if step.get("kind") == "plan"
+        )
+        plan_provenance_events = [
+            {
+                "seq": step.get("seq"),
+                "attempt": step.get("attempt"),
+                "planner_mode": step.get("planner_mode"),
+                "final_source": step.get("final_source"),
+                "llm_draft_available": bool(step.get("llm_draft_available")),
+                "llm_draft_step_count": int(step.get("llm_draft_step_count") or 0),
+                "final_plan_step_count": int(step.get("final_plan_step_count") or 0),
+            }
+            for step in self.steps
+            if step.get("kind") == "plan_provenance"
         ]
 
         summary = {
             "total_events": len(self.steps),
             "event_counts": dict(sorted(counts.items())),
             "plan_step_counts": plan_step_counts,
+            "model_raw_source_counts": dict(sorted(model_raw_source_counts.items())),
+            "model_plan_source_counts": dict(sorted(model_plan_source_counts.items())),
+            "accepted_plan_source_counts": dict(sorted(accepted_plan_source_counts.items())),
+            "accepted_planner_mode_counts": dict(sorted(accepted_planner_mode_counts.items())),
+            "plan_provenance_events": plan_provenance_events,
             "exec_steps_in_order": exec_steps,
         }
         if self.run_metadata:

@@ -456,6 +456,7 @@ class LLMVLMBasedBrain(Brain):
         self.mode = config.mode
         self.prompt_behavior_mode = PROMPT_BEHAVIOR_MODE
         self.debug_hook: Optional[Callable[[str, Dict[str, Any]], None]] = None
+        self.last_plan_provenance: Dict[str, Any] = {}
         self.llm_client = OpenAICompatChatClient(
             api_key=config.llm.api_key,
             base_url=config.llm.base_url,
@@ -519,7 +520,18 @@ class LLMVLMBasedBrain(Brain):
         parsed = _safe_json_loads(raw)
         if parsed is None:
             raise ValueError(f"LLM did not return JSON array. Raw:\n{raw}")
-        return _validate_plan(parsed, schema=schema, action_space=action_space)
+        validated = _validate_plan(parsed, schema=schema, action_space=action_space)
+        self._debug(
+            "model_plan",
+            {
+                "source": "llm",
+                "mode": self.mode,
+                "prompt_behavior_mode": self.prompt_behavior_mode,
+                "plan_size": len(validated),
+                "plan": validated,
+            },
+        )
+        return validated
 
     async def _run_vlm(
         self,
@@ -577,7 +589,19 @@ class LLMVLMBasedBrain(Brain):
         if parsed is None:
             raise ValueError(f"VLM did not return JSON array. Raw:\n{raw}")
 
-        return _validate_plan(parsed, schema=schema, action_space=action_space)
+        validated = _validate_plan(parsed, schema=schema, action_space=action_space)
+        self._debug(
+            "model_plan",
+            {
+                "source": "vlm",
+                "mode": self.mode,
+                "prompt_behavior_mode": self.prompt_behavior_mode,
+                "has_draft_plan": bool(draft_plan is not None),
+                "plan_size": len(validated),
+                "plan": validated,
+            },
+        )
+        return validated
 
     async def plan(
         self,
@@ -586,29 +610,55 @@ class LLMVLMBasedBrain(Brain):
         screenshot_path: Optional[Path] = None,
         validation_feedback: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
+        self.last_plan_provenance = {}
         if self.mode == "llm_only":
-            return await self._run_llm(
+            final_plan = await self._run_llm(
                 schema,
                 action_space=action_space,
                 validation_feedback=validation_feedback,
             )
+            self.last_plan_provenance = {
+                "planner_mode": self.mode,
+                "final_source": "llm",
+                "llm_draft_available": False,
+                "llm_draft_step_count": 0,
+                "final_plan_step_count": len(final_plan),
+            }
+            return final_plan
         if self.mode == "vlm_only":
-            return await self._run_vlm(
+            final_plan = await self._run_vlm(
                 schema,
                 action_space=action_space,
                 screenshot_path=screenshot_path,
                 validation_feedback=validation_feedback,
             )
+            self.last_plan_provenance = {
+                "planner_mode": self.mode,
+                "final_source": "vlm",
+                "llm_draft_available": False,
+                "llm_draft_step_count": 0,
+                "final_plan_step_count": len(final_plan),
+            }
+            return final_plan
 
         llm_draft = await self._run_llm(
             schema,
             action_space=action_space,
             validation_feedback=validation_feedback,
         )
-        return await self._run_vlm(
+        final_plan = await self._run_vlm(
             schema,
             action_space=action_space,
             screenshot_path=screenshot_path,
             draft_plan=llm_draft,
             validation_feedback=validation_feedback,
         )
+        self.last_plan_provenance = {
+            "planner_mode": self.mode,
+            "final_source": "vlm",
+            "llm_draft_available": True,
+            "llm_draft_step_count": len(llm_draft),
+            "final_plan_step_count": len(final_plan),
+            "llm_draft_plan": llm_draft,
+        }
+        return final_plan
