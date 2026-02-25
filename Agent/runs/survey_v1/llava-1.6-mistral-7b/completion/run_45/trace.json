@@ -1,0 +1,806 @@
+[
+  {
+    "seq": 1,
+    "ts_utc": "2026-02-25T01:26:18.003560+00:00",
+    "kind": "run_context",
+    "survey_version": "survey_v1",
+    "model_name": "llava-1.6-mistral-7b",
+    "prompt_behavior_mode": "completion",
+    "planner_mode": "vlm_only",
+    "required_tag": "NRT",
+    "target": "http://localhost:3000/survey_v1",
+    "headless": true
+  },
+  {
+    "seq": 2,
+    "ts_utc": "2026-02-25T01:26:18.780146+00:00",
+    "kind": "goto",
+    "url": "http://localhost:3000/survey_v1",
+    "current_url": "http://localhost:3000/survey_v1/text"
+  },
+  {
+    "seq": 3,
+    "ts_utc": "2026-02-25T01:26:18.807593+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 4,
+    "ts_utc": "2026-02-25T01:26:18.820906+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 5,
+    "ts_utc": "2026-02-25T01:26:18.904901+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\shot_1.png",
+    "full_page": true
+  },
+  {
+    "seq": 6,
+    "ts_utc": "2026-02-25T01:26:18.907551+00:00",
+    "kind": "page_marker",
+    "step_idx": 1,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey_v1/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 7,
+    "ts_utc": "2026-02-25T01:26:18.909834+00:00",
+    "kind": "action_space",
+    "step_idx": 1,
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_1.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 8,
+    "ts_utc": "2026-02-25T01:26:18.910112+00:00",
+    "kind": "page_changed",
+    "old_url": "http://localhost:3000/survey_v1",
+    "new_url": "http://localhost:3000/survey_v1/text",
+    "reset_plan_feedback": true
+  },
+  {
+    "seq": 9,
+    "ts_utc": "2026-02-25T01:26:18.910410+00:00",
+    "kind": "observe_state",
+    "step_idx": 1,
+    "url": "http://localhost:3000/survey_v1/text"
+  },
+  {
+    "seq": 10,
+    "ts_utc": "2026-02-25T01:26:18.911352+00:00",
+    "kind": "plan_input",
+    "step_idx": 1,
+    "action_space_path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_1.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 11,
+    "ts_utc": "2026-02-25T01:26:23.206112+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " ```json\n[\n  {\"tool\":\"fill\",\"key\":\"age\",\"value\":35},\n  {\"tool\":\"select\",\"key\":\"follow_by_age\",\"value\":\"very_closely\"},\n  {\"tool\":\"check\",\"key\":\"trust_coverage\",\"value\":\"Neutral\"},\n  {\"tool\":\"check\",\"key\":\"mood_impact\",\"value\":\"Agree\"},\n  {\"tool\":\"set_range\",\"key\":\"watch_time\",\"value\":3.5},\n  {\"tool\":\"click\",\"key\":\"next\"}\n]\n``` ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 0
+  },
+  {
+    "seq": 12,
+    "ts_utc": "2026-02-25T01:26:23.206666+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['employment_status', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 13,
+    "ts_utc": "2026-02-25T01:26:26.407018+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " The image you've provided appears to be a screenshot of an online survey form. Based on the visible fields, it seems that the user has already answered some questions and is currently on a page that requires selecting \"Somewhat\" for one item.\n\nHere are the actions the user should take based on the instructions provided in the image:\n\n1. Fill in the missing answerable items:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select from dropdown)\n   - country_satisfaction (set range)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey.\n\nPlease note that for the \"attention_text_mid\" field, which requires selecting \"Somewhat,\" there is already a selection made. The user should ensure that this choice aligns with their response to the question. ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 1
+  },
+  {
+    "seq": 14,
+    "ts_utc": "2026-02-25T01:26:26.407518+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "VLM did not return JSON array. Raw:\n The image you've provided appears to be a screenshot of an online survey form. Based on the visible fields, it seems that the user has already answered some questions and is currently on a page that requires selecting \"Somewhat\" for one item.\n\nHere are the actions the user should take based on the instructions provided in the image:\n\n1. Fill in the missing answerable items:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select from dropdown)\n   - country_satisfaction (set range)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey.\n\nPlease note that for the \"attention_text_mid\" field, which requires selecting \"Somewhat,\" there is already a selection made. The user should ensure that this choice aligns with their response to the question. "
+  },
+  {
+    "seq": 15,
+    "ts_utc": "2026-02-25T01:26:28.958810+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " Based on the instructions provided in the image and the visible fields, here are the actions the user should take:\n\n1. Fill in the missing answerable items as follows:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select \"Somewhat\" from the dropdown)\n   - country_satisfaction (set range to a value between 1 and 10)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 2
+  },
+  {
+    "seq": 16,
+    "ts_utc": "2026-02-25T01:26:28.959375+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "VLM did not return JSON array. Raw:\n Based on the instructions provided in the image and the visible fields, here are the actions the user should take:\n\n1. Fill in the missing answerable items as follows:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select \"Somewhat\" from the dropdown)\n   - country_satisfaction (set range to a value between 1 and 10)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. "
+  },
+  {
+    "seq": 17,
+    "ts_utc": "2026-02-25T01:26:28.959899+00:00",
+    "kind": "plan_fallback",
+    "error": "VLM did not return JSON array. Raw:\n Based on the instructions provided in the image and the visible fields, here are the actions the user should take:\n\n1. Fill in the missing answerable items as follows:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select \"Somewhat\" from the dropdown)\n   - country_satisfaction (set range to a value between 1 and 10)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. "
+  },
+  {
+    "seq": 18,
+    "ts_utc": "2026-02-25T01:26:28.960357+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 19,
+    "ts_utc": "2026-02-25T01:26:28.963868+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 20,
+    "ts_utc": "2026-02-25T01:26:28.966256+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 21,
+    "ts_utc": "2026-02-25T01:26:29.036251+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\shot_2.png",
+    "full_page": true
+  },
+  {
+    "seq": 22,
+    "ts_utc": "2026-02-25T01:26:29.038187+00:00",
+    "kind": "page_marker",
+    "step_idx": 2,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey_v1/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 23,
+    "ts_utc": "2026-02-25T01:26:29.048754+00:00",
+    "kind": "action_space",
+    "step_idx": 2,
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_2.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 24,
+    "ts_utc": "2026-02-25T01:26:29.049082+00:00",
+    "kind": "observe_state",
+    "step_idx": 2,
+    "url": "http://localhost:3000/survey_v1/text"
+  },
+  {
+    "seq": 25,
+    "ts_utc": "2026-02-25T01:26:29.049997+00:00",
+    "kind": "plan_input",
+    "step_idx": 2,
+    "action_space_path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_2.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 26,
+    "ts_utc": "2026-02-25T01:26:29.050372+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['employment_status', 'attention_text_mid', 'country_satisfaction', 'future_interest', 'favorite_moment']",
+      "VLM did not return JSON array. Raw:\n The image you've provided appears to be a screenshot of an online survey form. Based on the visible fields, it seems that the user has already answered some questions and is currently on a page that requires selecting \"Somewhat\" for one item.\n\nHere are the actions the user should take based on the instructions provided in the image:\n\n1. Fill in the missing answerable items:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select from dropdown)\n   - country_satisfaction (set range)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey.\n\nPlease note that for the \"attention_text_mid\" field, which requires selecting \"Somewhat,\" there is already a selection made. The user should ensure that this choice aligns with their response to the question. ",
+      "VLM did not return JSON array. Raw:\n Based on the instructions provided in the image and the visible fields, here are the actions the user should take:\n\n1. Fill in the missing answerable items as follows:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select \"Somewhat\" from the dropdown)\n   - country_satisfaction (set range to a value between 1 and 10)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. ",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'watch_time']"
+    ]
+  },
+  {
+    "seq": 27,
+    "ts_utc": "2026-02-25T01:26:30.872706+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " ```json\n[\n  {\"tool\":\"fill\",\"key\":\"employment_status\",\"value\":\"student\"},\n  {\"tool\":\"select\",\"key\":\"attention_text_mid\",\"value\":\"Somewhat\"},\n  {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7},\n  {\"tool\":\"select\",\"key\":\"future_interest\",\"value\":\"Very likely\"},\n  {\"tool\":\"fill\",\"key\":\"favorite_moment\",\"value\":\"The opening ceremony was the most memorable moment for me.\"}\n]\n``` ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 28,
+    "ts_utc": "2026-02-25T01:26:30.873304+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'watch_time']"
+  },
+  {
+    "seq": 29,
+    "ts_utc": "2026-02-25T01:26:32.399343+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " {\n\"fill\": [\n{\n\"tool\": \"fill\",\n\"key\": \"attention_text_mid\",\n\"value\": \"Somewhat\"\n}\n],\n\"set\\_range\": [\n{\n\"tool\": \"set\\_range\",\n\"key\": \"country_satisfaction\",\n\"value\": 7\n}\n]\n} ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 30,
+    "ts_utc": "2026-02-25T01:26:32.399956+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "VLM did not return JSON array. Raw:\n {\n\"fill\": [\n{\n\"tool\": \"fill\",\n\"key\": \"attention_text_mid\",\n\"value\": \"Somewhat\"\n}\n],\n\"set\\_range\": [\n{\n\"tool\": \"set\\_range\",\n\"key\": \"country_satisfaction\",\n\"value\": 7\n}\n]\n} "
+  },
+  {
+    "seq": 31,
+    "ts_utc": "2026-02-25T01:26:35.038312+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " The image shows a screenshot of an online survey with various fields and options. To complete the survey, the user should follow these steps:\n\n1. Fill in the missing answerable items as follows:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select \"Somewhat\" from the dropdown)\n   - country_satisfaction (set range to a value between 1 and 10)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 32,
+    "ts_utc": "2026-02-25T01:26:35.038854+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "VLM did not return JSON array. Raw:\n The image shows a screenshot of an online survey with various fields and options. To complete the survey, the user should follow these steps:\n\n1. Fill in the missing answerable items as follows:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select \"Somewhat\" from the dropdown)\n   - country_satisfaction (set range to a value between 1 and 10)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. "
+  },
+  {
+    "seq": 33,
+    "ts_utc": "2026-02-25T01:26:35.039538+00:00",
+    "kind": "plan_fallback",
+    "error": "VLM did not return JSON array. Raw:\n The image shows a screenshot of an online survey with various fields and options. To complete the survey, the user should follow these steps:\n\n1. Fill in the missing answerable items as follows:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select \"Somewhat\" from the dropdown)\n   - country_satisfaction (set range to a value between 1 and 10)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. "
+  },
+  {
+    "seq": 34,
+    "ts_utc": "2026-02-25T01:26:35.040145+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 35,
+    "ts_utc": "2026-02-25T01:26:35.043337+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 36,
+    "ts_utc": "2026-02-25T01:26:35.046149+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 37,
+    "ts_utc": "2026-02-25T01:26:35.119331+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\shot_3.png",
+    "full_page": true
+  },
+  {
+    "seq": 38,
+    "ts_utc": "2026-02-25T01:26:35.121189+00:00",
+    "kind": "page_marker",
+    "step_idx": 3,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey_v1/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 39,
+    "ts_utc": "2026-02-25T01:26:35.123634+00:00",
+    "kind": "action_space",
+    "step_idx": 3,
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_3.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 40,
+    "ts_utc": "2026-02-25T01:26:35.124055+00:00",
+    "kind": "observe_state",
+    "step_idx": 3,
+    "url": "http://localhost:3000/survey_v1/text"
+  },
+  {
+    "seq": 41,
+    "ts_utc": "2026-02-25T01:26:35.124965+00:00",
+    "kind": "plan_input",
+    "step_idx": 3,
+    "action_space_path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_3.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 42,
+    "ts_utc": "2026-02-25T01:26:35.125363+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'watch_time']",
+      "VLM did not return JSON array. Raw:\n {\n\"fill\": [\n{\n\"tool\": \"fill\",\n\"key\": \"attention_text_mid\",\n\"value\": \"Somewhat\"\n}\n],\n\"set\\_range\": [\n{\n\"tool\": \"set\\_range\",\n\"key\": \"country_satisfaction\",\n\"value\": 7\n}\n]\n} ",
+      "VLM did not return JSON array. Raw:\n The image shows a screenshot of an online survey with various fields and options. To complete the survey, the user should follow these steps:\n\n1. Fill in the missing answerable items as follows:\n   - employment_status (select from dropdown)\n   - attention_text_mid (select \"Somewhat\" from the dropdown)\n   - country_satisfaction (set range to a value between 1 and 10)\n   - future_interest (select from dropdown)\n   - favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\n2. After filling in the missing answerable items, click on \"Next\" to move to the next page of the survey.\n\n3. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. ",
+      "VLM did not return JSON array. Raw:\n To complete the survey, you should fill in the following answerable items:\n\n1. employment_status (select from dropdown)\n2. attention_text_mid (select \"Somewhat\" from the dropdown)\n3. country_satisfaction (set range to a value between 1 and 10)\n4. future_interest (select from dropdown)\n5. favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\nOnce these items are filled out, you can click on \"Next\" to move to the next page of the survey. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. "
+    ]
+  },
+  {
+    "seq": 43,
+    "ts_utc": "2026-02-25T01:26:37.457061+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " To complete the survey, you should fill in the following answerable items:\n\n1. employment_status (select from dropdown)\n2. attention_text_mid (select \"Somewhat\" from the dropdown)\n3. country_satisfaction (set range to a value between 1 and 10)\n4. future_interest (select from dropdown)\n5. favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\nOnce these items are filled out, you can click on \"Next\" to move to the next page of the survey. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 44,
+    "ts_utc": "2026-02-25T01:26:37.458188+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "VLM did not return JSON array. Raw:\n To complete the survey, you should fill in the following answerable items:\n\n1. employment_status (select from dropdown)\n2. attention_text_mid (select \"Somewhat\" from the dropdown)\n3. country_satisfaction (set range to a value between 1 and 10)\n4. future_interest (select from dropdown)\n5. favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\nOnce these items are filled out, you can click on \"Next\" to move to the next page of the survey. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. "
+  },
+  {
+    "seq": 45,
+    "ts_utc": "2026-02-25T01:26:39.420423+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"fill\",\n      \"key\": \"attention_text_mid\",\n      \"value\": \"Somewhat\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 7\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 46,
+    "ts_utc": "2026-02-25T01:26:39.421161+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"fill\",\n      \"key\": \"attention_text_mid\",\n      \"value\": \"Somewhat\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 7\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` "
+  },
+  {
+    "seq": 47,
+    "ts_utc": "2026-02-25T01:26:41.386380+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"employment_status\",\n      \"value\": \"student\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 7\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 48,
+    "ts_utc": "2026-02-25T01:26:41.387010+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"employment_status\",\n      \"value\": \"student\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 7\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` "
+  },
+  {
+    "seq": 49,
+    "ts_utc": "2026-02-25T01:26:41.387450+00:00",
+    "kind": "plan_fallback",
+    "error": "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"employment_status\",\n      \"value\": \"student\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 7\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` "
+  },
+  {
+    "seq": 50,
+    "ts_utc": "2026-02-25T01:26:41.387889+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 51,
+    "ts_utc": "2026-02-25T01:26:41.391465+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 52,
+    "ts_utc": "2026-02-25T01:26:41.394000+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 53,
+    "ts_utc": "2026-02-25T01:26:41.468141+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\shot_4.png",
+    "full_page": true
+  },
+  {
+    "seq": 54,
+    "ts_utc": "2026-02-25T01:26:41.470380+00:00",
+    "kind": "page_marker",
+    "step_idx": 4,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey_v1/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 55,
+    "ts_utc": "2026-02-25T01:26:41.472946+00:00",
+    "kind": "action_space",
+    "step_idx": 4,
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_4.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 56,
+    "ts_utc": "2026-02-25T01:26:41.473409+00:00",
+    "kind": "observe_state",
+    "step_idx": 4,
+    "url": "http://localhost:3000/survey_v1/text"
+  },
+  {
+    "seq": 57,
+    "ts_utc": "2026-02-25T01:26:41.474376+00:00",
+    "kind": "plan_input",
+    "step_idx": 4,
+    "action_space_path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_4.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 58,
+    "ts_utc": "2026-02-25T01:26:41.474864+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "VLM did not return JSON array. Raw:\n To complete the survey, you should fill in the following answerable items:\n\n1. employment_status (select from dropdown)\n2. attention_text_mid (select \"Somewhat\" from the dropdown)\n3. country_satisfaction (set range to a value between 1 and 10)\n4. future_interest (select from dropdown)\n5. favorite_moment (fill in text box with a brief description of one memorable Olympic moment)\n\nOnce these items are filled out, you can click on \"Next\" to move to the next page of the survey. If any questions are marked as required and have not been answered, they must be filled out before moving forward with the survey. ",
+      "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"fill\",\n      \"key\": \"attention_text_mid\",\n      \"value\": \"Somewhat\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 7\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` ",
+      "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"employment_status\",\n      \"value\": \"student\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 7\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` ",
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'watch_time', 'future_interest', 'favorite_moment']"
+    ]
+  },
+  {
+    "seq": 59,
+    "ts_utc": "2026-02-25T01:26:42.968016+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " ```json\n[\n  {\"tool\":\"select\",\"key\":\"employment_status\",\"value\":\"student\"},\n  {\"tool\":\"fill\",\"key\":\"attention_text_mid\",\"value\":\"Somewhat\"},\n  {\"tool\":\"set_range\",\"key\":\"country_satisfaction\",\"value\":7},\n  {\"tool\":\"click\",\"key\":\"next\"}\n]\n``` ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 60,
+    "ts_utc": "2026-02-25T01:26:42.968672+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'watch_time', 'future_interest', 'favorite_moment']"
+  },
+  {
+    "seq": 61,
+    "ts_utc": "2026-02-25T01:26:48.049849+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " The image you provided appears to be a screenshot of an online survey form. It contains various fields for the user to fill out, such as checkboxes, select dropdowns, text input fields, and a range slider. There are also navigation buttons at the bottom.\n\nBased on the visible elements in the image, here is a JSON array of action intents that would be appropriate for completing this survey:\n\n```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n```\n\nPlease note that the values for the fields are based on the visible options and the assumption that the user has not yet answered these questions. If any of the fields have already been answered, those answers should be included in the JSON array accordingly. Also, if there are additional fields or if the user has specific requirements (such as a preference to answer certain questions first), you may need to adjust the JSON array to reflect those considerations. ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 62,
+    "ts_utc": "2026-02-25T01:26:48.050507+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "VLM did not return JSON array. Raw:\n The image you provided appears to be a screenshot of an online survey form. It contains various fields for the user to fill out, such as checkboxes, select dropdowns, text input fields, and a range slider. There are also navigation buttons at the bottom.\n\nBased on the visible elements in the image, here is a JSON array of action intents that would be appropriate for completing this survey:\n\n```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n```\n\nPlease note that the values for the fields are based on the visible options and the assumption that the user has not yet answered these questions. If any of the fields have already been answered, those answers should be included in the JSON array accordingly. Also, if there are additional fields or if the user has specific requirements (such as a preference to answer certain questions first), you may need to adjust the JSON array to reflect those considerations. "
+  },
+  {
+    "seq": 63,
+    "ts_utc": "2026-02-25T01:26:52.676902+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " The JSON array you provided is missing some of the required answerable items for this survey: trust_coverage, mood_impact, age, follow_by_age, watch_time, future_interest, and favorite_moment. To complete the survey, these fields need to be filled out as well. Here's an updated JSON array with all of the required answerable items included:\n\n```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n```\n\nPlease remember to adjust the values for each field according to the user's actual responses. If any fields have already been answered, those answers should be included in the JSON array accordingly. ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 64,
+    "ts_utc": "2026-02-25T01:26:52.677557+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "VLM did not return JSON array. Raw:\n The JSON array you provided is missing some of the required answerable items for this survey: trust_coverage, mood_impact, age, follow_by_age, watch_time, future_interest, and favorite_moment. To complete the survey, these fields need to be filled out as well. Here's an updated JSON array with all of the required answerable items included:\n\n```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n```\n\nPlease remember to adjust the values for each field according to the user's actual responses. If any fields have already been answered, those answers should be included in the JSON array accordingly. "
+  },
+  {
+    "seq": 65,
+    "ts_utc": "2026-02-25T01:26:52.678041+00:00",
+    "kind": "plan_fallback",
+    "error": "VLM did not return JSON array. Raw:\n The JSON array you provided is missing some of the required answerable items for this survey: trust_coverage, mood_impact, age, follow_by_age, watch_time, future_interest, and favorite_moment. To complete the survey, these fields need to be filled out as well. Here's an updated JSON array with all of the required answerable items included:\n\n```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n```\n\nPlease remember to adjust the values for each field according to the user's actual responses. If any fields have already been answered, those answers should be included in the JSON array accordingly. "
+  },
+  {
+    "seq": 66,
+    "ts_utc": "2026-02-25T01:26:52.678452+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 67,
+    "ts_utc": "2026-02-25T01:26:52.681981+00:00",
+    "kind": "wait_for_not_loading",
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 68,
+    "ts_utc": "2026-02-25T01:26:52.684613+00:00",
+    "kind": "wait_for_any",
+    "hit": "input",
+    "selectors": [
+      "input",
+      "select",
+      "textarea",
+      "button",
+      "form"
+    ],
+    "timeout_ms": 20000
+  },
+  {
+    "seq": 69,
+    "ts_utc": "2026-02-25T01:26:52.752033+00:00",
+    "kind": "screenshot",
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\shot_5.png",
+    "full_page": true
+  },
+  {
+    "seq": 70,
+    "ts_utc": "2026-02-25T01:26:52.754002+00:00",
+    "kind": "page_marker",
+    "step_idx": 5,
+    "stage": "observe",
+    "url": "http://localhost:3000/survey_v1/text",
+    "title": "Survey Sandbox",
+    "heading": "Olympics Survey",
+    "has_text_answers_store": false,
+    "has_image_answers_store": false
+  },
+  {
+    "seq": 71,
+    "ts_utc": "2026-02-25T01:26:52.766498+00:00",
+    "kind": "action_space",
+    "step_idx": 5,
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_5.json",
+    "field_count": 11,
+    "interaction_counts": {
+      "check": 2,
+      "fill": 2,
+      "select": 4,
+      "set_range": 2,
+      "click": 1
+    }
+  },
+  {
+    "seq": 72,
+    "ts_utc": "2026-02-25T01:26:52.766994+00:00",
+    "kind": "observe_state",
+    "step_idx": 5,
+    "url": "http://localhost:3000/survey_v1/text"
+  },
+  {
+    "seq": 73,
+    "ts_utc": "2026-02-25T01:26:52.768045+00:00",
+    "kind": "plan_input",
+    "step_idx": 5,
+    "action_space_path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\action_space_5.json",
+    "action_space_field_count": 11
+  },
+  {
+    "seq": 74,
+    "ts_utc": "2026-02-25T01:26:52.768508+00:00",
+    "kind": "plan_feedback_used",
+    "count": 3,
+    "feedback": [
+      "Completion mode requires answering all answerable items before navigation; missing keys: ['trust_coverage', 'mood_impact', 'age', 'follow_by_age', 'watch_time', 'future_interest', 'favorite_moment']",
+      "VLM did not return JSON array. Raw:\n The image you provided appears to be a screenshot of an online survey form. It contains various fields for the user to fill out, such as checkboxes, select dropdowns, text input fields, and a range slider. There are also navigation buttons at the bottom.\n\nBased on the visible elements in the image, here is a JSON array of action intents that would be appropriate for completing this survey:\n\n```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n```\n\nPlease note that the values for the fields are based on the visible options and the assumption that the user has not yet answered these questions. If any of the fields have already been answered, those answers should be included in the JSON array accordingly. Also, if there are additional fields or if the user has specific requirements (such as a preference to answer certain questions first), you may need to adjust the JSON array to reflect those considerations. ",
+      "VLM did not return JSON array. Raw:\n The JSON array you provided is missing some of the required answerable items for this survey: trust_coverage, mood_impact, age, follow_by_age, watch_time, future_interest, and favorite_moment. To complete the survey, these fields need to be filled out as well. Here's an updated JSON array with all of the required answerable items included:\n\n```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n```\n\nPlease remember to adjust the values for each field according to the user's actual responses. If any fields have already been answered, those answers should be included in the JSON array accordingly. ",
+      "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` "
+    ]
+  },
+  {
+    "seq": 75,
+    "ts_utc": "2026-02-25T01:26:56.135129+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 76,
+    "ts_utc": "2026-02-25T01:26:56.135863+00:00",
+    "kind": "plan_reject",
+    "attempt": 1,
+    "error": "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` "
+  },
+  {
+    "seq": 77,
+    "ts_utc": "2026-02-25T01:26:59.551215+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 78,
+    "ts_utc": "2026-02-25T01:26:59.551946+00:00",
+    "kind": "plan_reject",
+    "attempt": 2,
+    "error": "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` "
+  },
+  {
+    "seq": 79,
+    "ts_utc": "2026-02-25T01:27:02.901234+00:00",
+    "kind": "model_raw",
+    "source": "vlm",
+    "mode": "vlm_only",
+    "prompt_behavior_mode": "completion",
+    "raw": " ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` ",
+    "action_space_field_count": 11,
+    "has_screenshot": true,
+    "has_draft_plan": false,
+    "validation_feedback_count": 3
+  },
+  {
+    "seq": 80,
+    "ts_utc": "2026-02-25T01:27:02.902039+00:00",
+    "kind": "plan_reject",
+    "attempt": 3,
+    "error": "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` "
+  },
+  {
+    "seq": 81,
+    "ts_utc": "2026-02-25T01:27:02.902567+00:00",
+    "kind": "plan_fallback",
+    "error": "VLM did not return JSON array. Raw:\n ```json\n{\n  \"fill\": [\n    {\n      \"tool\": \"select\",\n      \"key\": \"trust_coverage\",\n      \"value\": \"Strongly disagree\"\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"mood_impact\",\n      \"value\": \"Disagree\"\n    },\n    {\n      \"tool\": \"fill\",\n      \"key\": \"age\",\n      \"value\": 30.0\n    },\n    {\n      \"tool\": \"select\",\n      \"key\": \"follow_by_age\",\n      \"value\": \"very_closely\"\n    },\n    {\n      \"tool\": \"set_range\",\n      \"key\": \"country_satisfaction\",\n      \"value\": 5\n    }\n  ],\n  \"click\": [\n    {\n      \"tool\": \"click\",\n      \"key\": \"next\"\n    }\n  ]\n}\n``` "
+  },
+  {
+    "seq": 82,
+    "ts_utc": "2026-02-25T01:27:02.903017+00:00",
+    "kind": "plan_stalled",
+    "empty_plan_streak": 5,
+    "max_empty_plan_streak": 5,
+    "url": "http://localhost:3000/survey_v1/text"
+  },
+  {
+    "seq": 83,
+    "ts_utc": "2026-02-25T01:27:02.903519+00:00",
+    "kind": "plan",
+    "steps": []
+  },
+  {
+    "seq": 84,
+    "ts_utc": "2026-02-25T01:27:02.908283+00:00",
+    "kind": "submission_snapshot",
+    "path": "runs\\survey_v1\\llava-1.6-mistral-7b\\completion\\run_45\\submission_snapshot.json",
+    "capture_stage": "run_finally",
+    "has_any_values": false,
+    "text_answer_count": 0,
+    "image_answer_count": 0
+  },
+  {
+    "seq": 85,
+    "ts_utc": "2026-02-25T01:27:02.910726+00:00",
+    "kind": "session_id",
+    "session_id": "44412cb46890e901a8443b04eb2f5e21"
+  }
+]
