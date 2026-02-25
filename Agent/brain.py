@@ -457,8 +457,6 @@ class LLMVLMBasedBrain(Brain):
         self.mode = config.mode
         self.prompt_behavior_mode = PROMPT_BEHAVIOR_MODE
         self.debug_hook: Optional[Callable[[str, Dict[str, Any]], None]] = None
-        self.last_plan_provenance: Dict[str, Any] = {}
-        self._last_vlm_used_draft_fallback = False
         self.llm_client = OpenAICompatChatClient(
             api_key=config.llm.api_key,
             base_url=config.llm.base_url,
@@ -522,18 +520,7 @@ class LLMVLMBasedBrain(Brain):
         parsed = _safe_json_loads(raw)
         if parsed is None:
             raise ValueError(f"LLM did not return JSON array. Raw:\n{raw}")
-        validated = _validate_plan(parsed, schema=schema, action_space=action_space)
-        self._debug(
-            "model_plan",
-            {
-                "source": "llm",
-                "mode": self.mode,
-                "prompt_behavior_mode": self.prompt_behavior_mode,
-                "plan_size": len(validated),
-                "plan": validated,
-            },
-        )
-        return validated
+        return _validate_plan(parsed, schema=schema, action_space=action_space)
 
     async def _run_vlm(
         self,
@@ -543,7 +530,6 @@ class LLMVLMBasedBrain(Brain):
         draft_plan: Optional[List[Dict[str, Any]]] = None,
         validation_feedback: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
-        self._last_vlm_used_draft_fallback = False
         action_space = action_space or {}
         action_meta = action_space.get("meta") or {}
         draft_was_provided = draft_plan is not None
@@ -614,7 +600,6 @@ class LLMVLMBasedBrain(Brain):
         parsed = _safe_json_loads(raw)
         if parsed is None:
             if fallback_plan is not None:
-                self._last_vlm_used_draft_fallback = True
                 self._debug(
                     "model_fallback_to_draft",
                     {
@@ -624,17 +609,6 @@ class LLMVLMBasedBrain(Brain):
                         "fallback_plan_size": len(fallback_plan),
                     },
                 )
-                self._debug(
-                    "model_plan",
-                    {
-                        "source": "llm_draft_fallback",
-                        "mode": self.mode,
-                        "prompt_behavior_mode": self.prompt_behavior_mode,
-                        "has_draft_plan": bool(draft_was_provided),
-                        "plan_size": len(fallback_plan),
-                        "plan": fallback_plan,
-                    },
-                )
                 return fallback_plan
             raise ValueError(f"VLM did not return JSON array. Raw:\n{raw}")
 
@@ -642,7 +616,6 @@ class LLMVLMBasedBrain(Brain):
             validated = _validate_plan(parsed, schema=schema, action_space=action_space)
         except Exception as exc:
             if fallback_plan is not None:
-                self._last_vlm_used_draft_fallback = True
                 self._debug(
                     "model_fallback_to_draft",
                     {
@@ -652,30 +625,8 @@ class LLMVLMBasedBrain(Brain):
                         "fallback_plan_size": len(fallback_plan),
                     },
                 )
-                self._debug(
-                    "model_plan",
-                    {
-                        "source": "llm_draft_fallback",
-                        "mode": self.mode,
-                        "prompt_behavior_mode": self.prompt_behavior_mode,
-                        "has_draft_plan": bool(draft_was_provided),
-                        "plan_size": len(fallback_plan),
-                        "plan": fallback_plan,
-                    },
-                )
                 return fallback_plan
             raise
-        self._debug(
-            "model_plan",
-            {
-                "source": "vlm",
-                "mode": self.mode,
-                "prompt_behavior_mode": self.prompt_behavior_mode,
-                "has_draft_plan": bool(draft_plan is not None),
-                "plan_size": len(validated),
-                "plan": validated,
-            },
-        )
         return validated
 
     async def plan(
@@ -685,57 +636,29 @@ class LLMVLMBasedBrain(Brain):
         screenshot_path: Optional[Path] = None,
         validation_feedback: Optional[List[str]] = None,
     ) -> List[Dict[str, Any]]:
-        self.last_plan_provenance = {}
         if self.mode == "llm_only":
-            final_plan = await self._run_llm(
+            return await self._run_llm(
                 schema,
                 action_space=action_space,
                 validation_feedback=validation_feedback,
             )
-            self.last_plan_provenance = {
-                "planner_mode": self.mode,
-                "final_source": "llm",
-                "llm_draft_available": False,
-                "llm_draft_step_count": 0,
-                "final_plan_step_count": len(final_plan),
-            }
-            return final_plan
         if self.mode == "vlm_only":
-            final_plan = await self._run_vlm(
+            return await self._run_vlm(
                 schema,
                 action_space=action_space,
                 screenshot_path=screenshot_path,
                 validation_feedback=validation_feedback,
             )
-            self.last_plan_provenance = {
-                "planner_mode": self.mode,
-                "final_source": "vlm",
-                "llm_draft_available": False,
-                "llm_draft_step_count": 0,
-                "final_plan_step_count": len(final_plan),
-            }
-            return final_plan
 
         llm_draft = await self._run_llm(
             schema,
             action_space=action_space,
             validation_feedback=validation_feedback,
         )
-        final_plan = await self._run_vlm(
+        return await self._run_vlm(
             schema,
             action_space=action_space,
             screenshot_path=screenshot_path,
             draft_plan=llm_draft,
             validation_feedback=validation_feedback,
         )
-        used_draft_fallback = bool(getattr(self, "_last_vlm_used_draft_fallback", False))
-        self.last_plan_provenance = {
-            "planner_mode": self.mode,
-            "final_source": "llm_draft_fallback" if used_draft_fallback else "vlm",
-            "llm_draft_available": True,
-            "llm_draft_fallback_used": used_draft_fallback,
-            "llm_draft_step_count": len(llm_draft),
-            "final_plan_step_count": len(final_plan),
-            "llm_draft_plan": llm_draft,
-        }
-        return final_plan
