@@ -158,22 +158,6 @@ Useful flags:
 
 ## Utility Scripts
 
-### Capture manual full-page screenshots (survey_v0 only)
-
-```powershell
-python capture_survey_v0_screenshots.py --start-url http://localhost:3000/survey
-```
-
-This script intentionally rejects `/survey_v1`.
-
-### Remove `run_dir` column from CSV files
-
-From workspace root:
-
-```powershell
-python Agent\remove_run_dir_column.py Agent\runs --dry-run
-```
-
 ### Survey DB utilities
 
 From `survey-site/`:
