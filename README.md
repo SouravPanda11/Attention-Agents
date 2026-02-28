@@ -1,16 +1,20 @@
 # Attention Agents
 
-`Attention Agents` has two parts:
+Automation and evaluation stack for running LLM/VLM agents on a web survey and
+analyzing run quality from recorded artifacts.
 
-- `survey-site/`: Next.js survey app.
-- `Agent/`: Python Playwright + LangGraph agent that completes the survey and logs run artifacts.
+## Repository Layout
+
+- `survey-site/`: Next.js 16 + React 19 survey app with SQLite logging (`data.sqlite`).
+- `Agent/`: Playwright + LangGraph agent, batch runners, comparison scripts, plotting, and ingestion.
+- `evaluation/answer_key.json`: Offline answer keys for `survey_v0` and `survey_v1`.
 
 ## Prerequisites
 
 - Node.js 20+
 - npm 10+
 - Python 3.10+
-- A running OpenAI-compatible endpoint (LM Studio or similar) for LLM/VLM calls
+- OpenAI-compatible endpoint(s) for configured LLM/VLM models (LM Studio or similar)
 
 ## First-Time Setup
 
@@ -32,20 +36,27 @@ pip install -r requirements.txt
 python -m playwright install chromium
 ```
 
-### 3) Configure Agent environment
+### 3) Configure `Agent/.env`
 
-Edit `Agent/.env` and set at least:
+Set the model stack and target survey route:
 
-- `MODEL_NAME` (used as run output folder name)
-- `AGENT_BRAIN_MODE` (`llm_only`, `vlm_only`, or `hybrid`)
-- `LLM_*` variables
-- `VLM_*` variables if using `vlm_only` or `hybrid`
+- `AGENT_BRAIN_MODE`: `llm_only` | `vlm_only` | `hybrid`
+- `LLM_ENABLED`, `VLM_ENABLED`
+- `LLM_MODEL`, `VLM_MODEL`, `MODEL_NAME`
+- `LLM_BASE_URL`, `LLM_API_KEY`, `LLM_TEMPERATURE`, `LLM_TIMEOUT_S`
+- `VLM_BASE_URL`, `VLM_API_KEY`, `VLM_TEMPERATURE`, `VLM_TIMEOUT_S`
+- `SURVEY_TARGET` + `SURVEY_VERSION`:
+  - `http://localhost:3000/survey` + `survey_v0`, or
+  - `http://localhost:3000/survey_v1` + `survey_v1`
+
+Important: `.env` is parsed top-to-bottom, so if a key appears multiple times,
+the last assignment wins.
 
 ## Run Locally
 
 Use two terminals.
 
-### Terminal 1: Start the survey app
+### Terminal 1: start survey app
 
 ```powershell
 cd survey-site
@@ -54,7 +65,11 @@ npm run dev
 
 Site URL: `http://localhost:3000`
 
-### Terminal 2: Run the agent
+Routes:
+- `http://localhost:3000/survey` (`survey_v0`)
+- `http://localhost:3000/survey_v1` (`survey_v1`)
+
+### Terminal 2: run agent
 
 ```powershell
 cd Agent
@@ -62,46 +77,108 @@ cd Agent
 python agent.py
 ```
 
-Agent target URL: `http://localhost:3000/survey`
+Run outputs are written to:
 
-Run outputs are saved under:
+`Agent/runs/<SURVEY_VERSION>/<MODEL_NAME>/<completion|unconstrained>/run_*`
 
-`Agent/runs/survey_v0/<MODEL_NAME>/<completion|unconstrained>/run_*`
+`completion|unconstrained` comes from `PROMPT_BEHAVIOR_MODE` in
+`Agent/brain.py` (in-code toggle).
 
-Each run now includes `submission_snapshot.json` with normalized response payload
-captured from browser session storage for offline aggregation/debugging.
-For planner attribution, inspect:
-- `trace.json` events: `model_raw`, `model_plan`, `plan_provenance`, `plan`
-- `run_summary.json` keys: `model_raw_source_counts`, `model_plan_source_counts`, `accepted_plan_source_counts`
+Typical artifacts per run include:
 
-## Useful Commands
+- `trace.json`
+- `run_summary.json`
+- `submission_snapshot.json`
+- `action_space_*.json`
+- `ui_layout_trace*.json` (when layout trace is available)
 
-Run multiple times:
+## Analysis Workflow
+
+Run from `Agent/` with the virtual environment activated.
+
+### 1) Batch agent runs
 
 ```powershell
-cd Agent
-.venv\Scripts\activate
 python run_n_times.py
 ```
 
-Compare runs:
+Edit `NUM_RUNS`, `HEADLESS`, `DELAY_S`, `FAIL_FAST` in `run_n_times.py`.
+
+### 2) Compare run outcomes
 
 ```powershell
-cd Agent
-.venv\Scripts\activate
 python compare_runs.py
 ```
 
-Aggregate all run artifacts into a local DB (after pulling runs from workers):
+Outputs (per mode):
+- `completed_compared_runs.csv`
+- `unconstrained_compare_runs.csv`
+- plots in `_compare_plots/`
+
+This script validates against:
+- `survey-site/data.sqlite`
+- `evaluation/answer_key.json`
+
+### 3) Compare planning failures
 
 ```powershell
-cd Agent
-.venv\Scripts\activate
+python compare_plan_errors.py
+```
+
+Outputs (per mode):
+- `completed_plan_error_compare.csv`
+- `unconstrained_plan_error_compare.csv`
+- plots in `_plan_error_plots/`
+
+Optional merge/event exports are toggled in-code in `compare_plan_errors.py`.
+
+### 4) Plot summary charts
+
+```powershell
+python overall_summary_plotting.py
+python text_page_summary_plotting.py
+python image_page_summary_plotting.py
+```
+
+- `overall_summary_plotting.py` writes to `Agent/runs/<SURVEY_VERSION>/_overall_summary_plots/`
+- page-level scripts write to `Agent/runs/<SURVEY_VERSION>/_page_summary_plots/`
+- `image_page_summary_plotting.py` does cross-version comparison when
+  `SURVEY_VERSION != survey_v0` (baseline is `survey_v0`)
+
+### 5) Ingest runs into an aggregate SQLite DB
+
+```powershell
 python ingest_runs.py --db-path runs_aggregate.sqlite
 ```
 
-If you only want runs that have `submission_snapshot.json`:
+Useful flags:
+- `--snapshot-only`: ingest only runs with `submission_snapshot.json`
+- `--dry-run`: summarize without writing
+- `--runs-root <path>`: override runs root (default: `Agent/runs`)
+
+## Utility Scripts
+
+### Capture manual full-page screenshots (survey_v0 only)
 
 ```powershell
-python ingest_runs.py --db-path runs_aggregate.sqlite --snapshot-only
+python capture_survey_v0_screenshots.py --start-url http://localhost:3000/survey
+```
+
+This script intentionally rejects `/survey_v1`.
+
+### Remove `run_dir` column from CSV files
+
+From workspace root:
+
+```powershell
+python Agent\remove_run_dir_column.py Agent\runs --dry-run
+```
+
+### Survey DB utilities
+
+From `survey-site/`:
+
+```powershell
+python scripts/db_report.py
+python scripts/reset_db.py
 ```
