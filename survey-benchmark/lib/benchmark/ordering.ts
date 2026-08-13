@@ -5,8 +5,6 @@ export const ORDER_CONFIGS = [
   { id: "order01", seed: "wab-order-01" },
   { id: "order02", seed: "wab-order-02" },
   { id: "order03", seed: "wab-order-03" },
-  { id: "order04", seed: "wab-order-04" },
-  { id: "order05", seed: "wab-order-05" },
 ] as const satisfies readonly { id: OrderId; seed: string }[];
 
 function stringSeed(value: string): number {
@@ -29,7 +27,7 @@ function randomGenerator(seed: number) {
   };
 }
 
-function seededShuffle<T>(values: readonly T[], seed: string): T[] {
+export function seededShuffle<T>(values: readonly T[], seed: string): T[] {
   const shuffled = [...values];
   const random = randomGenerator(stringSeed(seed));
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -48,24 +46,32 @@ export function getOrderSeed(orderId: OrderId): string {
 export function orderQuestions(bank: QuestionBank, orderId: OrderId): SurveyQuestion[] {
   validateQuestionBank(bank);
   const byId = new Map(bank.questions.map((question) => [question.id, question]));
-  const canonicalIds = [...byId.keys()].sort();
-  const priority = new Map(
-    seededShuffle(canonicalIds, `${getOrderSeed(orderId)}:${bank.id}`).map((id, index) => [id, index])
-  );
-  const remaining = new Set(canonicalIds);
   const emitted = new Set<string>();
   const result: SurveyQuestion[] = [];
 
-  while (remaining.size > 0) {
-    const eligible = [...remaining]
-      .filter((id) => (byId.get(id)?.dependsOn ?? []).every((dependency) => emitted.has(dependency)))
-      .sort((left, right) => (priority.get(left) ?? 0) - (priority.get(right) ?? 0));
+  for (let block = 1; block <= bank.occurrence; block += 1) {
+    const canonicalIds = bank.questions
+      .filter((question) => question.block === block)
+      .map((question) => question.id)
+      .sort();
+    const priority = new Map(
+      seededShuffle(canonicalIds, `${getOrderSeed(orderId)}:presentation:block-${block}`).map((id, index) => [id, index])
+    );
+    const remaining = new Set(canonicalIds);
 
-    if (eligible.length === 0) throw new Error(`Unable to resolve dependencies for ${bank.id}.`);
-    const selected = eligible[0];
-    remaining.delete(selected);
-    emitted.add(selected);
-    result.push(byId.get(selected)!);
+    while (remaining.size > 0) {
+      const eligible = [...remaining]
+        .filter((id) => (byId.get(id)?.dependsOn ?? []).every((dependency) => emitted.has(dependency)))
+        .sort((left, right) => (priority.get(left) ?? 0) - (priority.get(right) ?? 0));
+
+      if (eligible.length === 0) {
+        throw new Error(`Unable to resolve dependencies for ${bank.id} block ${block}.`);
+      }
+      const selected = eligible[0];
+      remaining.delete(selected);
+      emitted.add(selected);
+      result.push(byId.get(selected)!);
+    }
   }
 
   return result;

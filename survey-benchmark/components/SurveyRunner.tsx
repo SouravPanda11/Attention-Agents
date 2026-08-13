@@ -2,14 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { isAnswerValid } from "@/lib/benchmark/answers";
+import { summarizeAnswers } from "@/lib/benchmark/answers";
 import type { AnswerValue, SurveyAnswers, Workflow } from "@/lib/benchmark/schema";
 import { QuestionRenderer } from "@/components/questions/QuestionRenderer";
+import { SurveyWelcome } from "@/components/SurveyWelcome";
 
 type StoredProgress = {
   runId: string;
   answers: SurveyAnswers;
   pageIndex: number;
+  started: boolean;
   completed: boolean;
 };
 
@@ -33,20 +35,23 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
   const [runId, setRunId] = useState("");
   const [answers, setAnswers] = useState<SurveyAnswers>({});
   const [pageIndex, setPageIndex] = useState(0);
-  const [invalidIds, setInvalidIds] = useState<string[]>([]);
   const [restored, setRestored] = useState(false);
+  const [started, setStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const pageStartedAt = useRef(0);
+  const welcomeViewedAt = useRef(0);
+  const loggedWelcome = useRef<string | null>(null);
   const loggedPage = useRef<string | null>(null);
 
   const currentPage = workflow.pages[pageIndex];
+  const allQuestions = useMemo(() => workflow.pages.flatMap((page) => page.questions), [workflow.pages]);
   const questionOffset = useMemo(
     () => workflow.pages.slice(0, pageIndex).reduce((sum, page) => sum + page.questions.length, 0),
     [pageIndex, workflow.pages]
   );
-  const answeredCount = workflow.orderedQuestionIds.filter((questionId) => answers[questionId] !== undefined).length;
+  const responseSummary = useMemo(() => summarizeAnswers(allQuestions, answers), [allQuestions, answers]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -62,6 +67,14 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
       setRunId(nextRunId);
       setAnswers(stored?.answers ?? {});
       setPageIndex(Math.min(Math.max(stored?.pageIndex ?? 0, 0), workflow.pageCount - 1));
+      setStarted(
+        Boolean(
+          stored?.started ||
+            stored?.completed ||
+            (stored?.pageIndex ?? 0) > 0 ||
+            Object.keys(stored?.answers ?? {}).length > 0
+        )
+      );
       setCompleted(Boolean(stored?.completed));
       setRestored(true);
     }, 0);
@@ -70,12 +83,26 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
 
   useEffect(() => {
     if (!restored || !runId) return;
-    const progress: StoredProgress = { runId, answers, pageIndex, completed };
+    const progress: StoredProgress = { runId, answers, pageIndex, started, completed };
     sessionStorage.setItem(storageKey, JSON.stringify(progress));
-  }, [answers, completed, pageIndex, restored, runId, storageKey]);
+  }, [answers, completed, pageIndex, restored, runId, started, storageKey]);
 
   useEffect(() => {
-    if (!restored || !runId || completed) return;
+    if (!restored || !runId || started || completed) return;
+    if (loggedWelcome.current === runId) return;
+    loggedWelcome.current = runId;
+    welcomeViewedAt.current = Date.now();
+    void postJson("/api/events", {
+      runId,
+      workflowId: workflow.id,
+      eventType: "welcome_viewed",
+      pageIndex: null,
+      payload: { hasWelcomePage: true },
+    }).catch(() => undefined);
+  }, [completed, restored, runId, started, workflow.id]);
+
+  useEffect(() => {
+    if (!restored || !runId || !started || completed) return;
     const pageKey = `${runId}:${pageIndex}`;
     if (loggedPage.current === pageKey) return;
     loggedPage.current = pageKey;
@@ -83,76 +110,93 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
     void postJson("/api/events", {
       runId,
       workflowId: workflow.id,
-      eventType: pageIndex === 0 ? "workflow_started" : "page_viewed",
+      eventType: "page_viewed",
       pageIndex,
       payload: {
         pageCount: workflow.pageCount,
         questionIds: workflow.pages[pageIndex].questions.map((question) => question.id),
       },
     }).catch(() => undefined);
-  }, [completed, pageIndex, restored, runId, workflow]);
+  }, [completed, pageIndex, restored, runId, started, workflow]);
+
+  function startSurvey() {
+    void postJson("/api/events", {
+      runId,
+      workflowId: workflow.id,
+      eventType: "workflow_started",
+      pageIndex: null,
+      payload: {
+        welcomeElapsedMs: Math.max(0, Date.now() - welcomeViewedAt.current),
+        questionPageCount: workflow.pageCount,
+        questionCount: workflow.questionCount,
+      },
+    }).catch(() => undefined);
+    setStarted(true);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
 
   function setAnswer(questionId: string, value: AnswerValue) {
     setAnswers((current) => ({ ...current, [questionId]: value }));
-    setInvalidIds((current) => current.filter((id) => id !== questionId));
+  }
+
+  function leavePage(direction: "previous" | "next" | "submit") {
+    if (!currentPage) return;
+    const pageSummary = summarizeAnswers(currentPage.questions, answers);
+    void postJson("/api/events", {
+      runId,
+      workflowId: workflow.id,
+      eventType: "page_left",
+      pageIndex,
+      payload: {
+        direction,
+        elapsedMs: Date.now() - pageStartedAt.current,
+        questionIds: currentPage.questions.map((question) => question.id),
+        attemptedCount: pageSummary.attemptedCount,
+        validCount: pageSummary.validCount,
+        invalidCount: pageSummary.invalidCount,
+        skippedCount: pageSummary.skippedCount,
+        skippedQuestionIds: pageSummary.skippedQuestionIds,
+        invalidQuestionIds: pageSummary.invalidQuestionIds,
+      },
+    }).catch(() => undefined);
+  }
+
+  function previousPage() {
+    if (pageIndex === 0 || submitting) return;
+    leavePage("previous");
+    setSubmitError("");
+    setPageIndex((current) => current - 1);
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
 
   async function advance() {
     if (!currentPage || submitting) return;
-    const invalid = currentPage.questions
-      .filter((question) => !isAnswerValid(question, answers[question.id]))
-      .map((question) => question.id);
-    setInvalidIds(invalid);
+    setSubmitError("");
 
-    if (invalid.length > 0) {
-      void postJson("/api/events", {
-        runId,
-        workflowId: workflow.id,
-        eventType: "page_validation_failed",
-        pageIndex,
-        payload: { invalidQuestionIds: invalid },
-      }).catch(() => undefined);
-      document.querySelector<HTMLElement>(`[data-question-id="${invalid[0]}"]`)?.focus();
-      document.querySelector<HTMLElement>(`[data-question-id="${invalid[0]}"]`)?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+    if (pageIndex < workflow.pageCount - 1) {
+      leavePage("next");
+      setPageIndex((current) => current + 1);
+      window.scrollTo({ top: 0, behavior: "instant" });
       return;
     }
 
-    setSubmitError("");
+    leavePage("submit");
     setSubmitting(true);
     try {
-      await postJson("/api/events", {
+      await postJson("/api/submissions", {
         runId,
         workflowId: workflow.id,
-        eventType: "page_completed",
-        pageIndex,
-        payload: {
-          elapsedMs: Date.now() - pageStartedAt.current,
-          questionIds: currentPage.questions.map((question) => question.id),
-        },
+        profile: workflow.profile,
+        occurrence: workflow.occurrence,
+        layout: workflow.layout,
+        orderId: workflow.orderId,
+        contentVersion: workflow.contentVersion,
+        attentionCheckContentVersion: workflow.attentionCheckContentVersion,
+        orderedQuestionIds: workflow.orderedQuestionIds,
+        answers,
       });
-
-      if (pageIndex < workflow.pageCount - 1) {
-        setPageIndex((current) => current + 1);
-        setInvalidIds([]);
-        window.scrollTo({ top: 0, behavior: "instant" });
-      } else {
-        await postJson("/api/submissions", {
-          runId,
-          workflowId: workflow.id,
-          profile: workflow.profile,
-          occurrence: workflow.occurrence,
-          layout: workflow.layout,
-          orderId: workflow.orderId,
-          contentVersion: workflow.contentVersion,
-          orderedQuestionIds: workflow.orderedQuestionIds,
-          answers,
-        });
-        setCompleted(true);
-        window.scrollTo({ top: 0, behavior: "instant" });
-      }
+      setCompleted(true);
+      window.scrollTo({ top: 0, behavior: "instant" });
     } catch {
       setSubmitError("The response could not be saved. Please try again.");
     } finally {
@@ -179,7 +223,13 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
         <section className="completion-card">
           <p className="eyebrow">Submission recorded</p>
           <h1>Workflow complete</h1>
-          <p>You completed all {workflow.questionCount} questions in {workflow.id}.</p>
+          <p>
+            You submitted {responseSummary.attemptedCount} response{responseSummary.attemptedCount === 1 ? "" : "s"}
+            {responseSummary.skippedCount > 0
+              ? ` and skipped ${responseSummary.skippedCount} question${responseSummary.skippedCount === 1 ? "" : "s"}`
+              : ""}
+            .
+          </p>
           <p className="run-reference">Run ID: {runId}</p>
           <div className="button-row">
             <Link className="secondary-button" href="/">
@@ -192,6 +242,10 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
         </section>
       </main>
     );
+  }
+
+  if (!started) {
+    return <SurveyWelcome workflowId={workflow.id} onStart={startSurvey} />;
   }
 
   return (
@@ -207,17 +261,17 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
             Page {pageIndex + 1} of {workflow.pageCount}
           </strong>
           <span>
-            {answeredCount} of {workflow.questionCount} questions answered
+            {responseSummary.attemptedCount} of {workflow.renderedQuestionCount} responses entered
           </span>
         </div>
       </header>
 
       <section className="instruction-card">
         <h2>Instructions</h2>
-        <p>Complete every question on this page, then use the button at the bottom to continue.</p>
+        <p>Questions may be left unanswered. Use Previous or Next to move between pages and revise responses.</p>
         <p>
           This is the <strong>{workflow.layout === "item" ? "item-heavy" : "navigation-heavy"}</strong>{" "}
-          layout with {workflow.questionCount} questions.
+          layout with {workflow.renderedQuestionCount} displayed items.
         </p>
       </section>
 
@@ -228,17 +282,11 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
             question={question}
             number={questionOffset + index + 1}
             value={answers[question.id]}
-            invalid={invalidIds.includes(question.id)}
             onChange={(value) => setAnswer(question.id, value)}
           />
         ))}
       </div>
 
-      {invalidIds.length > 0 ? (
-        <div className="error-summary" role="alert">
-          Complete the {invalidIds.length} highlighted question{invalidIds.length === 1 ? "" : "s"} before continuing.
-        </div>
-      ) : null}
       {submitError ? (
         <div className="error-summary" role="alert">
           {submitError}
@@ -247,17 +295,30 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
 
       <footer className="survey-footer">
         <span>
-          Questions {questionOffset + 1}–{questionOffset + currentPage.questions.length} of {workflow.questionCount}
+          Items {questionOffset + 1}–{questionOffset + currentPage.questions.length} of {workflow.renderedQuestionCount}
         </span>
-        <button
-          type="button"
-          className="primary-button"
-          data-action={pageIndex === workflow.pageCount - 1 ? "submit-survey" : "next-page"}
-          disabled={submitting}
-          onClick={advance}
-        >
-          {submitting ? "Saving…" : pageIndex === workflow.pageCount - 1 ? "Submit survey" : "Next page"}
-        </button>
+        <div className="page-navigation-actions">
+          {pageIndex > 0 ? (
+            <button
+              type="button"
+              className="secondary-button"
+              data-action="previous-page"
+              disabled={submitting}
+              onClick={previousPage}
+            >
+              Previous page
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="primary-button"
+            data-action={pageIndex === workflow.pageCount - 1 ? "submit-survey" : "next-page"}
+            disabled={submitting}
+            onClick={advance}
+          >
+            {submitting ? "Saving…" : pageIndex === workflow.pageCount - 1 ? "Submit survey" : "Next page"}
+          </button>
+        </div>
       </footer>
     </main>
   );

@@ -1,5 +1,14 @@
 import type { AnswerValue, SurveyQuestion } from "@/lib/benchmark/schema";
 
+export type AnswerStatus = "skipped" | "valid" | "invalid";
+
+export function isAnswerAttempted(value: unknown): boolean {
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  return false;
+}
+
 function isSelection(value: AnswerValue): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === "string");
 }
@@ -9,6 +18,7 @@ export function isAnswerValid(question: SurveyQuestion, value: AnswerValue): boo
     case "single-radio":
     case "single-dropdown":
     case "likert":
+    case "image-single-select":
       return typeof value === "string" && question.options.some((option) => option.value === value);
     case "single-checkbox":
     case "multiple-checkbox":
@@ -48,22 +58,33 @@ export function isAnswerValid(question: SurveyQuestion, value: AnswerValue): boo
   }
 }
 
-export function answerRequirement(question: SurveyQuestion): string {
-  switch (question.kind) {
-    case "single-checkbox":
-      return "Select exactly one option.";
-    case "multiple-checkbox":
-      return question.minSelections === question.maxSelections
-        ? `Select exactly ${question.minSelections} options.`
-        : `Select ${question.minSelections} to ${question.maxSelections} options.`;
-    case "slider":
-      return "Move the slider to record a response.";
-    case "ranking":
-      return "Change the order using drag-and-drop or the move buttons.";
-    case "short-text":
-    case "long-text":
-      return `Enter between ${question.minLength} and ${question.maxLength} characters.`;
-    default:
-      return "A response is required.";
+export function classifyAnswer(question: SurveyQuestion, value: unknown): AnswerStatus {
+  if (!isAnswerAttempted(value)) return "skipped";
+  return isAnswerValid(question, value as AnswerValue) ? "valid" : "invalid";
+}
+
+export function summarizeAnswers(
+  questions: readonly SurveyQuestion[],
+  answers: Readonly<Record<string, unknown>>
+) {
+  const validQuestionIds: string[] = [];
+  const invalidQuestionIds: string[] = [];
+  const skippedQuestionIds: string[] = [];
+
+  for (const question of questions) {
+    const status = classifyAnswer(question, answers[question.id]);
+    if (status === "valid") validQuestionIds.push(question.id);
+    else if (status === "invalid") invalidQuestionIds.push(question.id);
+    else skippedQuestionIds.push(question.id);
   }
+
+  return {
+    attemptedCount: validQuestionIds.length + invalidQuestionIds.length,
+    validCount: validQuestionIds.length,
+    invalidCount: invalidQuestionIds.length,
+    skippedCount: skippedQuestionIds.length,
+    validQuestionIds,
+    invalidQuestionIds,
+    skippedQuestionIds,
+  };
 }

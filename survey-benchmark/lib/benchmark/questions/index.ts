@@ -1,28 +1,39 @@
-import { ORDER_IDS, type Occurrence, type QuestionBank } from "@/lib/benchmark/schema";
+import { ORDER_IDS, OCCURRENCES, type Occurrence, type OrderId, type QuestionBank } from "@/lib/benchmark/schema";
 import { orderQuestions } from "@/lib/benchmark/ordering";
+import { sampleMainQuestionBank } from "@/lib/benchmark/questions/mainQuestionBank";
 import { validateQuestionBank } from "@/lib/benchmark/validation";
-import { o1Bank } from "@/lib/benchmark/questions/o1";
-import { o2Bank } from "@/lib/benchmark/questions/o2";
-import { o3Bank } from "@/lib/benchmark/questions/o3";
-import { o4Bank } from "@/lib/benchmark/questions/o4";
-import { o5Bank } from "@/lib/benchmark/questions/o5";
-import { o6Bank } from "@/lib/benchmark/questions/o6";
-import { o7Bank } from "@/lib/benchmark/questions/o7";
-import { o8Bank } from "@/lib/benchmark/questions/o8";
 
-export const QUESTION_BANKS = [o1Bank, o2Bank, o3Bank, o4Bank, o5Bank, o6Bank, o7Bank, o8Bank].map(
-  validateQuestionBank
-) as readonly QuestionBank[];
+/** Materialize an O=k prefix from one of the three frozen bucket shuffles. */
+export function getQuestionBank(occurrence: Occurrence, orderId: OrderId): QuestionBank {
+  return validateQuestionBank(sampleMainQuestionBank(occurrence, orderId));
+}
 
-for (const bank of QUESTION_BANKS) {
-  const signatures = ORDER_IDS.map((orderId) => orderQuestions(bank, orderId).map((question) => question.id).join("|"));
-  if (new Set(signatures).size !== ORDER_IDS.length) {
-    throw new Error(`[workflow validation] ${bank.id} does not have five unique order variants.`);
+// Fail fast if any frozen form violates counts, nesting, full-bank coverage, or
+// presentation-order uniqueness.
+for (const orderId of ORDER_IDS) {
+  let priorIds = new Set<string>();
+  for (const occurrence of OCCURRENCES) {
+    const bank = getQuestionBank(occurrence, orderId);
+    const ids = new Set(bank.questions.map((question) => question.id));
+    for (const priorId of priorIds) {
+      if (!ids.has(priorId)) {
+        throw new Error(`[main question bank] ${orderId} o${occurrence} is not a nested prefix.`);
+      }
+    }
+    priorIds = ids;
+  }
+  if (priorIds.size !== 88) {
+    throw new Error(`[main question bank] ${orderId} o8 must contain all 88 canonical questions.`);
   }
 }
 
-export function getQuestionBank(occurrence: Occurrence): QuestionBank {
-  const bank = QUESTION_BANKS.find((candidate) => candidate.occurrence === occurrence);
-  if (!bank) throw new Error(`Missing question bank for occurrence ${occurrence}.`);
-  return bank;
+for (const occurrence of OCCURRENCES) {
+  const signatures = ORDER_IDS.map((orderId) =>
+    orderQuestions(getQuestionBank(occurrence, orderId), orderId)
+      .map((question) => question.id)
+      .join("|")
+  );
+  if (new Set(signatures).size !== ORDER_IDS.length) {
+    throw new Error(`[main question bank] o${occurrence} must have three distinct frozen forms.`);
+  }
 }

@@ -1,7 +1,7 @@
 "use client";
 
+import Image from "next/image";
 import type { AnswerValue, SurveyQuestion } from "@/lib/benchmark/schema";
-import { answerRequirement } from "@/lib/benchmark/answers";
 import { RankingInput } from "@/components/questions/RankingInput";
 
 function selectedValues(value: AnswerValue): string[] {
@@ -12,19 +12,15 @@ export function QuestionRenderer({
   question,
   number,
   value,
-  invalid,
   onChange,
 }: {
   question: SurveyQuestion;
   number: number;
   value: AnswerValue;
-  invalid: boolean;
   onChange: (value: AnswerValue) => void;
 }) {
   const controlId = `question-${question.id}`;
   const promptId = `${controlId}-prompt`;
-  const errorId = `${controlId}-error`;
-  const describedBy = invalid ? errorId : undefined;
 
   function toggleCheckbox(optionValue: string, exactlyOne: boolean) {
     const current = selectedValues(value);
@@ -43,9 +39,6 @@ export function QuestionRenderer({
     <div id={promptId} className="question-prompt">
       <span className="question-number">{number}.</span>
       <span>{question.prompt}</span>
-      <span className="required-mark" aria-label="required">
-        *
-      </span>
     </div>
   );
 
@@ -53,7 +46,7 @@ export function QuestionRenderer({
 
   if (question.kind === "single-radio" || question.kind === "likert") {
     field = (
-      <fieldset className="option-fieldset" aria-labelledby={promptId} aria-describedby={describedBy}>
+      <fieldset className="option-fieldset" aria-labelledby={promptId}>
         <legend className="sr-only">{question.prompt}</legend>
         <div className={question.kind === "likert" ? "option-row" : "option-column"}>
           {question.options.map((option) => (
@@ -71,6 +64,36 @@ export function QuestionRenderer({
         </div>
       </fieldset>
     );
+  } else if (question.kind === "image-single-select") {
+    field = (
+      <fieldset className="option-fieldset" aria-labelledby={promptId}>
+        <legend className="sr-only">{question.prompt}</legend>
+        <div className="image-option-grid">
+          {question.options.map((option) => (
+            <label
+              className={`image-option-label${value === option.value ? " image-option-selected" : ""}`}
+              key={option.value}
+            >
+              <input
+                type="radio"
+                name={question.id}
+                value={option.value}
+                checked={value === option.value}
+                onChange={() => onChange(option.value)}
+              />
+              <Image
+                className="image-option-media"
+                src={option.imageSrc}
+                alt={option.imageAlt}
+                width={480}
+                height={320}
+              />
+              <span>{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+    );
   } else if (question.kind === "single-dropdown") {
     field = (
       <select
@@ -78,7 +101,6 @@ export function QuestionRenderer({
         name={question.id}
         value={typeof value === "string" ? value : ""}
         aria-labelledby={promptId}
-        aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}
       >
         <option value="" disabled>
@@ -94,7 +116,7 @@ export function QuestionRenderer({
   } else if (question.kind === "single-checkbox" || question.kind === "multiple-checkbox") {
     const selected = selectedValues(value);
     field = (
-      <fieldset className="option-fieldset" aria-labelledby={promptId} aria-describedby={describedBy}>
+      <fieldset className="option-fieldset" aria-labelledby={promptId}>
         <legend className="sr-only">{question.prompt}</legend>
         <div className="option-column">
           {question.options.map((option) => (
@@ -126,7 +148,6 @@ export function QuestionRenderer({
           step={question.step}
           value={sliderValue}
           aria-labelledby={promptId}
-          aria-describedby={describedBy}
           data-interacted={typeof value === "number" ? "true" : "false"}
           onChange={(event) => onChange(Number(event.target.value))}
         />
@@ -154,7 +175,6 @@ export function QuestionRenderer({
         step={question.step}
         value={typeof value === "number" ? value : ""}
         aria-labelledby={promptId}
-        aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value === "" ? undefined : Number(event.target.value))}
       />
     );
@@ -168,7 +188,6 @@ export function QuestionRenderer({
         maxLength={question.maxLength}
         value={typeof value === "string" ? value : ""}
         aria-labelledby={promptId}
-        aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}
       />
     );
@@ -182,7 +201,6 @@ export function QuestionRenderer({
         maxLength={question.maxLength}
         value={typeof value === "string" ? value : ""}
         aria-labelledby={promptId}
-        aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.value)}
       />
     );
@@ -190,21 +208,16 @@ export function QuestionRenderer({
 
   return (
     <section
-      className={`question-card${invalid ? " question-card-invalid" : ""}`}
+      className="question-card"
       tabIndex={-1}
       data-question-id={question.id}
       data-question-type={question.kind}
       data-question-block={question.block}
-      data-question-required="true"
+      data-question-required="false"
     >
       {prompt}
       {question.helpText ? <p className="question-help">{question.helpText}</p> : null}
       {field}
-      {invalid ? (
-        <p id={errorId} className="field-error" role="alert">
-          {answerRequirement(question)}
-        </p>
-      ) : null}
     </section>
   );
 }

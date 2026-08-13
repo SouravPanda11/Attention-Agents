@@ -1,13 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import type { LayoutMode, Occurrence, OrderId } from "@/lib/benchmark/schema";
+import {
+  ATTENTION_CHECKS_PER_BLOCK,
+  RENDERED_QUESTIONS_PER_BLOCK,
+  SUBSTANTIVE_QUESTIONS_PER_BLOCK,
+  type LayoutMode,
+  type Occurrence,
+  type OrderId,
+} from "@/lib/benchmark/schema";
 
 export function WorkflowLauncher() {
   const [occurrence, setOccurrence] = useState<Occurrence>(1);
   const [layout, setLayout] = useState<LayoutMode>("item");
   const [order, setOrder] = useState<OrderId>("order01");
-  const questionCount = occurrence * 10;
+  const substantiveQuestionCount = occurrence * SUBSTANTIVE_QUESTIONS_PER_BLOCK;
+  const attentionCheckCount = occurrence * ATTENTION_CHECKS_PER_BLOCK;
+  const questionCount = occurrence * RENDERED_QUESTIONS_PER_BLOCK;
   const pageCount = layout === "item" ? 1 : occurrence;
   const url = `/survey/standard/o${occurrence}/${layout}/${order}`;
 
@@ -23,7 +32,7 @@ export function WorkflowLauncher() {
           <select value={occurrence} onChange={(event) => setOccurrence(Number(event.target.value) as Occurrence)}>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((value) => (
               <option key={value} value={value}>
-                o{value} · {value * 10} questions
+                o{value} · {value * RENDERED_QUESTIONS_PER_BLOCK} displayed items
               </option>
             ))}
           </select>
@@ -31,14 +40,14 @@ export function WorkflowLauncher() {
         <label>
           Layout
           <select value={layout} onChange={(event) => setLayout(event.target.value as LayoutMode)}>
-            <option value="item">Item-heavy · all questions on one page</option>
-            <option value="navigation">Navigation-heavy · ten questions per page</option>
+            <option value="item">Item-heavy · all blocks on one page</option>
+            <option value="navigation">Navigation-heavy · one 13-item block per page</option>
           </select>
         </label>
         <label>
           Fixed order
           <select value={order} onChange={(event) => setOrder(event.target.value as OrderId)}>
-            {[1, 2, 3, 4, 5].map((value) => {
+            {[1, 2, 3].map((value) => {
               const orderId = `order${String(value).padStart(2, "0")}` as OrderId;
               return (
                 <option key={orderId} value={orderId}>
@@ -50,7 +59,9 @@ export function WorkflowLauncher() {
         </label>
       </div>
       <div className="launcher-summary">
-        <span>{questionCount} questions</span>
+        <span>{substantiveQuestionCount} substantive questions</span>
+        <span>{attentionCheckCount} attention check{attentionCheckCount === 1 ? "" : "s"}</span>
+        <span>{questionCount} displayed items</span>
         <span>{pageCount} page{pageCount === 1 ? "" : "s"}</span>
         <span>standard profile</span>
       </div>

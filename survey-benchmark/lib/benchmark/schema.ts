@@ -2,7 +2,7 @@ export const SUITE_VERSION = "v0" as const;
 export const PRESENTATION_PROFILES = ["standard"] as const;
 export const OCCURRENCES = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 export const LAYOUT_MODES = ["item", "navigation"] as const;
-export const ORDER_IDS = ["order01", "order02", "order03", "order04", "order05"] as const;
+export const ORDER_IDS = ["order01", "order02", "order03"] as const;
 
 export const QUESTION_KINDS = [
   "single-radio",
@@ -15,7 +15,12 @@ export const QUESTION_KINDS = [
   "numeric",
   "short-text",
   "long-text",
+  "image-single-select",
 ] as const;
+
+export const SUBSTANTIVE_QUESTIONS_PER_BLOCK = QUESTION_KINDS.length;
+export const ATTENTION_CHECKS_PER_BLOCK = 2 as const;
+export const RENDERED_QUESTIONS_PER_BLOCK = 13 as const;
 
 export type PresentationProfile = (typeof PRESENTATION_PROFILES)[number];
 export type Occurrence = (typeof OCCURRENCES)[number];
@@ -29,12 +34,17 @@ export type ChoiceOption = {
   label: string;
 };
 
+export type ImageChoiceOption = ChoiceOption & {
+  imageSrc: string;
+  imageAlt: string;
+};
+
 type BaseQuestion<K extends QuestionKind> = {
   id: string;
   kind: K;
   block: number;
   prompt: string;
-  required: true;
+  required: false;
   helpText?: string;
   dependsOn?: readonly string[];
 };
@@ -92,6 +102,10 @@ export type LongTextQuestion = BaseQuestion<"long-text"> & {
   rows: number;
 };
 
+export type ImageSingleSelectQuestion = BaseQuestion<"image-single-select"> & {
+  options: readonly ImageChoiceOption[];
+};
+
 export type SurveyQuestion =
   | SingleRadioQuestion
   | SingleDropdownQuestion
@@ -102,7 +116,8 @@ export type SurveyQuestion =
   | RankingQuestion
   | NumericQuestion
   | ShortTextQuestion
-  | LongTextQuestion;
+  | LongTextQuestion
+  | ImageSingleSelectQuestion;
 
 export type QuestionBank = {
   id: OccurrenceId;
@@ -123,15 +138,20 @@ export type WorkflowPage = {
 export type Workflow = {
   id: string;
   suiteVersion: typeof SUITE_VERSION;
+  hasWelcomePage: true;
   profile: PresentationProfile;
   occurrence: Occurrence;
   occurrenceId: OccurrenceId;
   layout: LayoutMode;
   orderId: OrderId;
   contentVersion: number;
+  attentionCheckContentVersion: number;
+  substantiveQuestionCount: number;
+  attentionCheckCount: number;
+  renderedQuestionCount: number;
   questionCount: number;
   pageCount: number;
-  questionsPerNavigationPage: 10;
+  questionsPerNavigationPage: typeof RENDERED_QUESTIONS_PER_BLOCK;
   orderedQuestionIds: readonly string[];
   pages: readonly WorkflowPage[];
 };

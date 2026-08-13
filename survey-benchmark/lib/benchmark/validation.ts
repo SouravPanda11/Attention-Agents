@@ -35,6 +35,13 @@ function validateQuestion(question: SurveyQuestion, occurrence: number) {
     case "likert":
       validateOptions(question.id, question.options);
       break;
+    case "image-single-select":
+      validateOptions(question.id, question.options);
+      for (const option of question.options) {
+        assert(option.imageSrc.trim().length > 0, `${question.id} contains an empty image source.`);
+        assert(option.imageAlt.trim().length > 0, `${question.id} contains empty image alternative text.`);
+      }
+      break;
     case "single-checkbox":
       validateOptions(question.id, question.options);
       assert(question.minSelections === 1 && question.maxSelections === 1, `${question.id} must require exactly one selection.`);
@@ -73,6 +80,11 @@ function validateDependencies(bank: QuestionBank) {
     for (const dependency of question.dependsOn ?? []) {
       assert(ids.has(dependency), `${question.id} depends on missing question ${dependency}.`);
       assert(dependency !== question.id, `${question.id} cannot depend on itself.`);
+      const dependencyQuestion = bank.questions.find((candidate) => candidate.id === dependency);
+      assert(
+        !dependencyQuestion || dependencyQuestion.block <= question.block,
+        `${question.id} cannot depend on a question in a later block.`
+      );
     }
   }
 
@@ -109,7 +121,10 @@ export function validateQuestionBank(bank: QuestionBank): QuestionBank {
 
   for (let block = 1; block <= bank.occurrence; block += 1) {
     const questions = bank.questions.filter((question) => question.block === block);
-    assert(questions.length === QUESTION_KINDS.length, `${bank.id} block ${block} must contain ten questions.`);
+    assert(
+      questions.length === QUESTION_KINDS.length,
+      `${bank.id} block ${block} must contain ${QUESTION_KINDS.length} substantive questions.`
+    );
     for (const kind of QUESTION_KINDS) {
       const count = questions.filter((question) => question.kind === kind).length;
       assert(count === 1, `${bank.id} block ${block} must contain exactly one ${kind}; found ${count}.`);

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
-import { getWorkflowManifest } from "@/lib/benchmark/buildWorkflow";
-import { SUITE_VERSION } from "@/lib/benchmark/schema";
+import { NAVIGATION_PAGE_SIZE, getWorkflowManifest } from "@/lib/benchmark/buildWorkflow";
+import {
+  ATTENTION_CHECKS_PER_BLOCK,
+  SUBSTANTIVE_QUESTIONS_PER_BLOCK,
+  SUITE_VERSION,
+} from "@/lib/benchmark/schema";
 
 export async function GET() {
   const workflows = getWorkflowManifest();
@@ -8,9 +12,13 @@ export async function GET() {
     suiteVersion: SUITE_VERSION,
     presentationProfiles: ["standard"],
     workflowConditionCount: 16,
-    fixedOrderCount: 5,
+    fixedOrderCount: 3,
     workflowInstanceCount: workflows.length,
-    navigationPageSize: 10,
+    everyWorkflowHasWelcomePage: true,
+    substantiveQuestionsPerBlock: SUBSTANTIVE_QUESTIONS_PER_BLOCK,
+    attentionChecksPerBlock: ATTENTION_CHECKS_PER_BLOCK,
+    renderedQuestionsPerBlock: NAVIGATION_PAGE_SIZE,
+    navigationPageSize: NAVIGATION_PAGE_SIZE,
     workflows,
   });
 }
