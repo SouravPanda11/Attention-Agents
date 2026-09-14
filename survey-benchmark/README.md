@@ -2,6 +2,26 @@
 
 A standalone Next.js application for the fixed survey-workflow benchmark. The existing `survey-site` application is not used or modified by this project.
 
+## Theme-only o1 runs
+
+The launcher also provides eight single-theme surveys: consumer, digital, wellbeing,
+education, work, finance, civic, and lifestyle. Each contains exactly **11 substantive
+questions and no attention checks**, on one question page after the welcome screen.
+
+Routes follow `/survey/themes/<theme>/order01` (also `order02` and `order03`).
+All three orders use the same 11 questions for that theme, in distinct deterministic
+orders. These are separate workflows from the embedded-check suite described below;
+their IDs contain `o1-theme-<theme>` and their attention content version is 0.
+
+`/api/manifest` includes `themes` and `themeWorkflows` in addition to the existing
+48-instance `workflows` list. Submissions store `theme_id`, zero attention counts,
+and return per-question valid/invalid/skipped classifications. Subjective answers
+are evaluated for format/constraint validity, not semantic correctness.
+
+The [Agentic runner](../Agentic/README.md) runs the three orders of each theme before
+switching themes. The default is 24 runs per model; five repeats per order gives 120.
+It answers one question at a time, with at most three model turns per question.
+
 ## Naming
 
 - `v0` is the benchmark-suite release.

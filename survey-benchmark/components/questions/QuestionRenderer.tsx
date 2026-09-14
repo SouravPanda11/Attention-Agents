@@ -214,6 +214,8 @@ export function QuestionRenderer({
       data-question-type={question.kind}
       data-question-block={question.block}
       data-question-required="false"
+      data-min-selections={question.kind === "single-checkbox" || question.kind === "multiple-checkbox" ? question.minSelections : undefined}
+      data-max-selections={question.kind === "single-checkbox" || question.kind === "multiple-checkbox" ? question.maxSelections : undefined}
     >
       {prompt}
       {question.helpText ? <p className="question-help">{question.helpText}</p> : null}

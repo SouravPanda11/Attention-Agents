@@ -1,4 +1,6 @@
 import { WorkflowLauncher } from "@/components/WorkflowLauncher";
+import { ThemeLauncher } from "@/components/ThemeLauncher";
+import { THEMES } from "@/lib/benchmark/questions/mainQuestionBank";
 import {
   ATTENTION_CHECKS_PER_BLOCK,
   OCCURRENCES,
@@ -18,6 +20,7 @@ export default function HomePage() {
         </p>
       </header>
 
+      <ThemeLauncher themes={THEMES} />
       <WorkflowLauncher />
 
       <section className="matrix-card" aria-labelledby="matrix-heading">

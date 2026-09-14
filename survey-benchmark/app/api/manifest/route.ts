@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { NAVIGATION_PAGE_SIZE, getWorkflowManifest } from "@/lib/benchmark/buildWorkflow";
+import { getThemeWorkflowManifest } from "@/lib/benchmark/themeWorkflow";
+import { THEMES } from "@/lib/benchmark/questions/mainQuestionBank";
 import {
   ATTENTION_CHECKS_PER_BLOCK,
   SUBSTANTIVE_QUESTIONS_PER_BLOCK,
@@ -20,5 +22,7 @@ export async function GET() {
     renderedQuestionsPerBlock: NAVIGATION_PAGE_SIZE,
     navigationPageSize: NAVIGATION_PAGE_SIZE,
     workflows,
+    themes: THEMES,
+    themeWorkflows: getThemeWorkflowManifest(),
   });
 }

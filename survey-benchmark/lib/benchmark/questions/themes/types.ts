@@ -16,6 +16,10 @@ export const THEME_IDS = [
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
+export function isThemeId(value: unknown): value is ThemeId {
+  return typeof value === "string" && THEME_IDS.includes(value as ThemeId);
+}
+
 export type ThemeQuestionSet = {
   [Kind in QuestionKind]: Extract<SurveyQuestion, { kind: Kind }>;
 };

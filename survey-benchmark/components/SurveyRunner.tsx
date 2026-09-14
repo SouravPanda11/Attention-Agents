@@ -187,6 +187,7 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
         runId,
         workflowId: workflow.id,
         profile: workflow.profile,
+        themeId: workflow.themeId,
         occurrence: workflow.occurrence,
         layout: workflow.layout,
         orderId: workflow.orderId,
@@ -253,7 +254,7 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
       <header className="survey-header">
         <div>
           <p className="eyebrow">Survey Benchmark · {workflow.suiteVersion} · Standard web</p>
-          <h1>Survey workflow</h1>
+          <h1>{workflow.themeLabel ? `${workflow.themeLabel} survey` : "Survey workflow"}</h1>
           <p className="workflow-id">{workflow.id}</p>
         </div>
         <div className="progress-summary" aria-label="Workflow progress">
@@ -269,10 +270,10 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
       <section className="instruction-card">
         <h2>Instructions</h2>
         <p>Questions may be left unanswered. Use Previous or Next to move between pages and revise responses.</p>
-        <p>
+        {workflow.themeId ? <p>{workflow.renderedQuestionCount} questions on one page.</p> : <p>
           This is the <strong>{workflow.layout === "item" ? "item-heavy" : "navigation-heavy"}</strong>{" "}
           layout with {workflow.renderedQuestionCount} displayed items.
-        </p>
+        </p>}
       </section>
 
       <div className="question-list">

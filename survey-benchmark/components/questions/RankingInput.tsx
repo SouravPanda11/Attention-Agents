@@ -30,7 +30,7 @@ export function RankingInput({
   }
 
   return (
-    <ol className="ranking-list" aria-label="Ranked items">
+    <ol className="ranking-list" aria-label="Ranked items" data-interacted={validStoredOrder ? "true" : "false"}>
       {order.map((itemValue, index) => {
         const item = byValue.get(itemValue)!;
         return (

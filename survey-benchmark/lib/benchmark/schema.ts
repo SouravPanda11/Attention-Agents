@@ -137,6 +137,8 @@ export type WorkflowPage = {
 
 export type Workflow = {
   id: string;
+  themeId?: string;
+  themeLabel?: string;
   suiteVersion: typeof SUITE_VERSION;
   hasWelcomePage: true;
   profile: PresentationProfile;
@@ -151,7 +153,7 @@ export type Workflow = {
   renderedQuestionCount: number;
   questionCount: number;
   pageCount: number;
-  questionsPerNavigationPage: typeof RENDERED_QUESTIONS_PER_BLOCK;
+  questionsPerNavigationPage: number;
   orderedQuestionIds: readonly string[];
   pages: readonly WorkflowPage[];
 };

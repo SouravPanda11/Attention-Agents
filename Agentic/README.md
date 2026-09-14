@@ -1,0 +1,254 @@
+# Agentic: theme-only survey experiments
+
+An independent LM Studio + Playwright runner for `survey-benchmark`. The current
+experiment contains eight o1 themes, each with **11 substantive questions and no
+embedded attention checks**. The original `Agent/` remains reserved for survey-site.
+
+## Experiment schedule
+
+Themes run in this order: consumer, digital, wellbeing, education, work, finance,
+civic, lifestyle. For each theme, the runner cycles through `order01`, `order02`,
+and `order03`, then moves to the next theme. The same 11 questions appear in all
+three orders; only their presentation order changes. Each order is deterministic.
+Every run has a fresh browser session and benchmark run ID.
+
+- Default: 8 themes x 3 orders x 1 repetition = **24 runs per model**.
+- With `SURVEY_REPEATS=5`: 8 x 3 x 5 = **120 runs per model**.
+
+With five repetitions, a theme runs order01, order02, order03, order01, order02,
+order03, and so on, finishing all 15 runs before the next theme starts. Repeated
+orders retain the same question order. The schedule is saved with the results.
+
+## Setup
+
+Start the benchmark in a separate terminal:
+
+```powershell
+cd survey-benchmark
+npm install
+npm run dev
+```
+
+Set up the independent Python environment from the repository root:
+
+```powershell
+cd Agentic
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\python.exe -m playwright install chromium
+# Only if .env does not exist yet:
+Copy-Item .env.example .env
+```
+
+Load a model in LM Studio and start its server. The runner uses the local
+[chat completions interface](https://lmstudio.ai/docs/developer/openai-compat),
+with `http://127.0.0.1:1234/v1` as the default endpoint.
+
+```powershell
+.venv\Scripts\python.exe agent.py models
+```
+
+Use an exact ID from that list in `Agentic/.env`:
+
+```dotenv
+AGENT_BRAIN_MODE=llm_only
+LLM_ENABLED=1
+VLM_ENABLED=0
+LLM_MODEL=your-loaded-model-id
+LLM_BASE_URL=http://127.0.0.1:1234/v1
+LLM_TEMPERATURE=0
+MODEL_NAME=
+
+SURVEY_TARGET=http://127.0.0.1:3001
+SURVEY_VERSION=v0
+SURVEY_OCCURRENCE=o1
+SURVEY_THEMES=all
+SURVEY_ORDERS=order01 order02 order03
+SURVEY_REPEATS=1
+AGENTIC_RUNS_DIR=runs
+```
+
+The file provides commentable LLM/VLM model alternatives. To switch models, load the
+next model, uncomment its `LLM_MODEL` line, comment out the previous one, then run
+the same command. `MODEL_NAME` is an optional folder label; leaving it empty makes
+the folder follow the selected model automatically. Keep it empty for multi-model
+batches. `OPENAI_API_KEY` supplies the shared key when the endpoint key is omitted.
+
+Shell variables override matching `.env` entries; CLI flags override configuration.
+Earlier `AGENTIC_MODEL`, `AGENTIC_LM_BASE_URL`, `AGENTIC_API_KEY`,
+`AGENTIC_BASE_URL`, and `AGENTIC_TEMPERATURE` remain fallback aliases when their
+new counterpart is absent. No configuration is loaded from `Agent/.env`.
+
+`SURVEY_TARGET` is the benchmark root URL, not a survey-site route. `SURVEY_VERSION`
+must match its manifest's suite version. `SURVEY_THEMES` accepts `all` or a
+space-separated list such as `work finance`; that list controls theme sequence.
+The theme experiment uses one item page, so `SURVEY_LAYOUTS` is no longer used.
+The runner rejects embedded-check manifests rather than silently mixing them into
+this experiment. The site retains its original embedded-check workflows separately.
+
+## Run
+
+Preview the exact theme/order/repetition schedule without browser or model calls:
+
+```powershell
+.venv\Scripts\python.exe agent.py run --dry-run
+```
+
+Run all eight themes using the model selected in `.env`:
+
+```powershell
+.venv\Scripts\python.exe agent.py run
+```
+
+Useful overrides:
+
+```powershell
+# Three orders for the work theme, with the browser visible:
+.venv\Scripts\python.exe agent.py run --themes work --headed
+# Five repetitions per order, all themes (120 runs):
+.venv\Scripts\python.exe agent.py run --repeats 5
+# Available models run sequentially:
+.venv\Scripts\python.exe agent.py run --models "model-a" "model-b"
+```
+
+The model determines an answer for one question at a time. Each request has exactly
+one actionable question, survey instructions, and previous responses as read-only
+context. Future questions are not sent as actionable fields. Cross-question
+plans and navigation actions are rejected during question answering.
+
+A turn is one model response containing an action array; multiple actions on the
+same question are allowed. The runner moves on after a valid response, or after
+**three unsuccessful turns**. Model-request errors, malformed plans, browser
+failures, and incomplete/invalid inputs all consume that question's budget. Unused
+turns do not transfer. An 11-question page permits at most **33 model calls**.
+Start and Submit are performed by the harness, with no model-planning turns.
+
+After budget exhaustion, a partial answer is cleared and the question is recorded
+as `unanswered` / `turn_budget_exhausted`. For controls without a UI reset, the
+harness removes only that answer from saved session progress and reloads the page.
+Other answers and the run ID are preserved. This may add page-view events;
+question budgets are counted from agent artifacts, not page events.
+
+## Prompt and observation
+
+`brain.py` has a commentable default behavior toggle:
+
+```python
+PROMPT_BEHAVIOR_MODE = "completion"
+# PROMPT_BEHAVIOR_MODE = "unconstrained"
+```
+
+Completion asks the model to fully answer the current question. Unconstrained adds
+no completion requirement and permits `done` to skip the current question early.
+`--behavior` or `AGENTIC_BEHAVIOR` overrides the code default. The prompt name is
+`agentic-zero-shot`, independent of occurrence level; no answered demonstrations
+are included. Public format constraints determine retries, not private answer keys.
+
+`llm_only` uses DOM observations: prompts, help, options, input constraints, current
+values, and image alt text. **No screenshots are captured, saved, or sent** in DOM
+mode, including after submission. This is a DOM interaction experiment, not a test
+of visual understanding. A future explicit `vlm_only` / `--observation vision` run
+can attach the current image-question crop; only vision mode captures screenshots.
+For that mode enable `VLM_ENABLED=1` and select the VLM endpoint/model. Hybrid mode
+is not implemented.
+
+Temperature is fixed at **0**. No token limit or request/browser timeout is imposed
+by this runner. LM Studio controls generation length. Three turns limits request
+count, not the duration of a pending request.
+
+Tools are `fill`, `select`, `check`, `uncheck`, `set_range`, `rank`, `click`, and
+`done`. Check/uncheck accept exact values or unambiguous exact labels. Dropdowns
+and rankings use exact values. Ranking is executed using Up/Down buttons and
+sliders use keyboard input; even an initial displayed value needs an explicit
+interaction. Public DOM attributes expose selection counts and ranking state.
+
+## Stored results
+
+```text
+Agentic/runs/<model_name>/
+  o1_consumer/
+    <timestamp-and-batch-id>/
+      experiment.json
+      manifest.json
+      run-001-order01-repeat-001/
+      run-002-order02-repeat-001/
+      run-003-order03-repeat-001/
+  o1_digital/
+  o1_wellbeing/
+  o1_education/
+  o1_work/
+  o1_finance/
+  o1_civic/
+  o1_lifestyle/
+```
+
+Each run contains `workflow.json`, `welcome.json`, question/turn observations,
+model requests and responses, validated plans, `trace.json`, `question-<n>.json`,
+`submission_snapshot.json`, `evaluation.json`, and `run_summary.json`. Requests
+exclude API keys. Every question record includes its turn count and outcome.
+Failed and interrupted runs retain their available artifacts.
+
+Run numbers reflect execution order within a theme. New batch folders prevent
+later invocations from overwriting results. Unsafe characters in model IDs are
+replaced for folder names; the original ID remains in the records.
+
+## Evaluation
+
+Reports refresh **after every run** at batch, theme, model, and runs-root level.
+All tables have both CSV and JSON forms:
+
+| File | Scope |
+| --- | --- |
+| `run_metrics` | One row per attempted run, including failures. |
+| `question_metrics` | Server classification and turns for every submitted question. |
+| `comparison` | Model/theme/order results across repetitions. |
+| `theme_comparison` | Results pooled over orders within each model/theme. |
+| `model_comparison` | Results pooled over all selected themes and orders. |
+| `format_comparison` | Valid, invalid, skipped counts and mean turns per model/theme/interaction format. |
+
+Metrics include submission rate, all-questions-valid rate, attempted/invalid/skipped
+counts, valid-response rate in accepted submissions, end-to-end valid-response
+rate over all attempted runs, model calls, budget exhaustion, plan/action/model
+errors, token usage coverage, and wall/model time. Wall time includes mean, median,
+and sample standard deviation (when at least two runs exist).
+
+`valid_response_rate_submitted` excludes runs that never submitted. Assess it
+alongside submission rate. `end_to_end_valid_rate` counts only server-valid,
+submitted answers in its numerator and all scheduled items of attempted runs in
+its denominator. Question/format tables cover accepted submissions; failures remain
+in run/model/theme tables. Protocol settings and bank versions remain separate
+comparison groups. Missing token usage is identified through `usage_reported_calls`.
+
+Validity means the response meets the form's constraints. Subjective survey answers
+have no correctness key, so these reports do not claim semantic answer accuracy.
+There are **zero attention checks** in theme-only runs: attention status is
+`not_applicable` and attention pass rate is null. The server returns per-question
+validity after submission; it is never fed back into model planning. These theme
+metrics do not require direct access to the SQLite file.
+
+The site persists submissions in `survey-benchmark/benchmark.sqlite`, including
+`theme_id`, workflow/order IDs, versions, answers, and counts. Original embedded
+workflows retain their grading path. If analyzing old embedded runs, attention
+scores still require a matching read-only database via `AGENTIC_DB_PATH`.
+
+```powershell
+# Refresh all reports:
+.venv\Scripts\python.exe agent.py report
+# Refresh one model/theme:
+.venv\Scripts\python.exe agent.py report --runs-dir runs/your-model/o1_work
+# Re-read evaluations from saved submissions:
+.venv\Scripts\python.exe agent.py evaluate
+```
+
+For `run`, `--runs-dir` is the root beneath which model/theme folders are created.
+For `report` / `evaluate`, it selects the directory tree to analyze.
+
+## Verification
+
+```powershell
+.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+Verification uses temporary artifacts and does not populate `Agentic/runs` with
+smoke data. `.env`, virtual environments, databases, and run artifacts are ignored
+by Git.

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { summarizeAnswers } from "@/lib/benchmark/answers";
+import { classifyAnswer, summarizeAnswers } from "@/lib/benchmark/answers";
 import { summarizeAttentionChecks } from "@/lib/benchmark/attentionChecks";
 import { buildWorkflow } from "@/lib/benchmark/buildWorkflow";
+import { buildThemeWorkflow } from "@/lib/benchmark/themeWorkflow";
+import { isThemeId } from "@/lib/benchmark/questions/themes/types";
 import {
   isLayoutMode,
   isOccurrence,
@@ -16,6 +18,7 @@ export const runtime = "nodejs";
 type SubmissionBody = {
   runId?: unknown;
   workflowId?: unknown;
+  themeId?: unknown;
   profile?: unknown;
   occurrence?: unknown;
   layout?: unknown;
@@ -51,7 +54,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "invalid_submission" }, { status: 400 });
   }
 
-  const workflow = buildWorkflow(body.profile, body.occurrence, body.layout, body.orderId);
+  if (body.themeId !== undefined && (!isThemeId(body.themeId) || body.occurrence !== 1 || body.layout !== "item")) {
+    return NextResponse.json({ ok: false, error: "invalid_theme_workflow" }, { status: 400 });
+  }
+  const workflow = isThemeId(body.themeId)
+    ? buildThemeWorkflow(body.themeId, body.orderId)
+    : buildWorkflow(body.profile, body.occurrence, body.layout, body.orderId);
   const submittedIds = body.orderedQuestionIds.map(String);
   if (
     body.workflowId !== workflow.id ||
@@ -70,7 +78,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "unexpected_answers", unexpectedQuestionIds }, { status: 400 });
   }
   const summary = summarizeAnswers(questions, answers);
-  const attentionSummary = summarizeAttentionChecks(workflow.occurrence, workflow.orderId, answers);
+  const attentionSummary = workflow.themeId
+    ? { checkCount: 0, scoredCount: 0, unscoredCount: 0, attemptedCount: 0, passCount: 0, failCount: 0, skippedCount: 0, results: [] }
+    : summarizeAttentionChecks(workflow.occurrence, workflow.orderId, answers);
 
   const sessionId = await getOrCreateSessionId();
   const database = getDatabase();
@@ -82,8 +92,8 @@ export async function POST(request: Request) {
         valid_answer_count, invalid_answer_count, skipped_question_count,
         attention_check_count, attention_check_scored_count, attention_check_unscored_count,
         attention_check_attempted_count, attention_check_pass_count,
-        attention_check_fail_count, attention_check_skipped_count, attention_check_results
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        attention_check_fail_count, attention_check_skipped_count, attention_check_results, theme_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(run_id, workflow_id) DO UPDATE SET
         ts = excluded.ts,
         content_version = excluded.content_version,
@@ -101,7 +111,8 @@ export async function POST(request: Request) {
         attention_check_pass_count = excluded.attention_check_pass_count,
         attention_check_fail_count = excluded.attention_check_fail_count,
         attention_check_skipped_count = excluded.attention_check_skipped_count,
-        attention_check_results = excluded.attention_check_results`
+        attention_check_results = excluded.attention_check_results,
+        theme_id = excluded.theme_id`
     )
     .run(
       new Date().toISOString(),
@@ -128,7 +139,8 @@ export async function POST(request: Request) {
       attentionSummary.passCount,
       attentionSummary.failCount,
       attentionSummary.skippedCount,
-      JSON.stringify(attentionSummary.results)
+      JSON.stringify(attentionSummary.results),
+      workflow.themeId ?? null
     );
 
   database
@@ -167,5 +179,12 @@ export async function POST(request: Request) {
     validCount: summary.validCount,
     invalidCount: summary.invalidCount,
     skippedCount: summary.skippedCount,
+    themeId: workflow.themeId ?? null,
+    attentionCheckCount: workflow.attentionCheckCount,
+    questionResults: questions.map((question) => ({
+      questionId: question.id,
+      kind: question.kind,
+      status: classifyAnswer(question, answers[question.id]),
+    })),
   });
 }

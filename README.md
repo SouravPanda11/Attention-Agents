@@ -7,6 +7,8 @@ analyzing run quality from recorded artifacts.
 
 - `survey-site/`: Next.js 16 + React 19 survey app with SQLite logging (`data.sqlite`).
 - `Agent/`: Playwright + LangGraph agent, batch runners, comparison scripts, plotting, and ingestion.
+- `survey-benchmark/`: Standalone fixed-form workflow benchmark on port 3001.
+- [`Agentic/`](Agentic/README.md): Independent LM Studio browser runner and evaluations for the benchmark's o1 order variants.
 - `evaluation/answer_key.json`: Offline answer keys for `survey_v0` and `survey_v1`.
 
 ## Prerequisites

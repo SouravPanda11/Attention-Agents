@@ -80,5 +80,8 @@ export function getDatabase(): Database.Database {
   if (!submissionColumns.has("attention_check_results")) {
     database.exec("ALTER TABLE submissions ADD COLUMN attention_check_results TEXT NOT NULL DEFAULT '[]'");
   }
+  if (!submissionColumns.has("theme_id")) {
+    database.exec("ALTER TABLE submissions ADD COLUMN theme_id TEXT");
+  }
   return database;
 }
