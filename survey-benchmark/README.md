@@ -1,10 +1,11 @@
 # Survey Benchmark
 
-A standalone Next.js application on port **3001** for testing web agents on optional survey questions, embedded attention checks, and increasing survey horizons. The `survey-site` app is separate.
+A standalone Next.js application for testing web agents on survey questions, embedded attention checks, and increasing survey horizons.
 
-## Finalized design (suite v1)
+## Suite v1
 
-The normal-question bank contains **8 themes x 11 question types = 88 questions**. The attention-check bank contains **8 ordinary checks** plus **1 fixed penultimate check**.
+The normal-question bank contains **8 themes x 11 question types = 88 questions**.
+The attention-check bank contains **8 ordinary checks** plus **1 fixed penultimate check**.
 
 A **content sample** selects whole themes and an ordinary-AC multiset. An **order** fixes the question sequence and logical navigation blocks. A **layout** renders those blocks across pages or concatenates them on one page. A **run** is a fresh agent execution of a sample/layout/order variant. These are separate dimensions.
 
@@ -18,8 +19,6 @@ Eight samples, one per theme, each with 11 normal questions and no ACs. Each has
 ```
 
 ### Surveys with attention checks
-
-#### Sampling quick reference
 
 **Occurrence counts normal question types, not repeated copies of the same normal question.** At O = n, choose n different themes and take all 11 questions from each. There are n questions of each type in the survey, and no normal question repeats.
 
@@ -123,7 +122,7 @@ The total is `672 + 11,760 + 9,408 + 420 + 9,408 + 11,760 + 1,344 + 6 = 44,778`.
 
 `(224 × 1 × 3) + (7,351 × 2 × 3) = 672 + 44,106 = 44,778 variants`.
 
-## Counts and run plans
+## v1 counts and run plans
 
 One workflow variant identifies a **content sample + layout + order**. Executing it three times gives three runs of that same variant, not three new orders.
 
@@ -137,7 +136,42 @@ One workflow variant identifies a **content sample + layout + order**. Executing
 | Theme-only baselines | **8** themes | 8 × 1 × 3 = **24** | 24 × 3 = **72** |
 | **Grand total** | 7,575 + 8 = **7,583** | 44,778 + 24 = **44,802** | 44,802 × 3 = **134,406** |
 
-The grand total adds the **AC subtotal + baselines**; the two AC detail rows explain that subtotal and are not added again. For M models, the full default schedule is `134,406 × M` executions. Changing the repetitions to R changes the per-model total to `44,802 × R`; it does not change the content samples or workflow variants.
+The grand total adds the **AC subtotal + baselines**; the two AC detail rows explain that subtotal and are not added again. **We retain three executions of every sample/layout/order combination.** For M models, the full **v1** schedule requires `134,406 × M` executions. The intervention versions below use only O = 1.
+
+### Runs per sample and across versions
+
+A **benchmark version** means v1, v2, or v3. A **workflow configuration** means one content sample with one layout and one order. Each included configuration is executed three times per model, per version.
+
+The versions have different experimental scopes:
+
+- **v1:** O = 1 establishes theme/AC coverage; O = 2-8 evaluates long-horizon behavior with matched navigation-heavy and item-heavy layouts.
+- **v2 and v3:** intervention versions intended to safeguard agent behavior. Evaluate the **224 O = 1 AC samples only**; do not repeat the O = 2-8 long-horizon experiments. Each intervention uses the same three O = 1 question orders and three repetitions for comparison with v1.
+- The budget below retains the **eight no-AC O = 1 baselines in each version**, shown separately from the AC experiments. O = 1 has one layout, so there is no navigation/item doubling in v2 or v3.
+
+| What is being counted? | Runs per model in an applicable version | Runs per model across the full study |
+| --- | --- | --- |
+| One fixed O = 1 sample/layout/order configuration | **3** repetitions | 3 repetitions × 3 versions = **9** |
+| One O = 1 AC sample, including all orders | 1 layout × 3 orders × 3 repetitions = **9** | 9 × 3 versions = **27** |
+| One O = 2-8 AC sample, including both layouts and all orders | 2 layouts × 3 orders × 3 repetitions = **18** in v1 | **18**, tested in v1 only |
+| One theme-only baseline sample, including all orders | 1 layout × 3 orders × 3 repetitions = **9** | 9 × 3 versions = **27** |
+
+For **each intervention version**, the AC calculation is `224 samples × 1 layout × 3 orders × 3 repetitions = 2,016 runs per model`. The baselines add `8 × 1 × 3 × 3 = 72` runs, giving **`2,016 + 72 = 2,088 runs per model`**. v2 and v3 implementation is in progress; their counts are projections for this O = 1-only scope, not additional versions already available in the app.
+
+| Benchmark version | Implementation status | AC runs per model | Baseline runs per model | Total runs per model | Cumulative runs per model |
+| --- | --- | --- | --- | --- | --- |
+| v1 | Implemented | 44,778 × 3 = **134,334** | 24 × 3 = **72** | 134,334 + 72 = **134,406** | **134,406** |
+| v2 (O = 1 only) | Intervention implementation in progress | 224 × 1 × 3 × 3 = **2,016** | 24 × 3 = **72** | 2,016 + 72 = **2,088** | 134,406 + 2,088 = **136,494** |
+| v3 (O = 1 only) | Intervention implementation in progress | 224 × 1 × 3 × 3 = **2,016** | 24 × 3 = **72** | 2,016 + 72 = **2,088** | 136,494 + 2,088 = **138,582** |
+
+**Full three-version budget per model:**
+
+`134,406 (full v1) + 2,088 (O = 1 v2) + 2,088 (O = 1 v3) = 138,582 executions`.
+
+Equivalently, the AC experiments contribute `134,334 + 2,016 + 2,016 = 138,366` executions and the baselines contribute `72 × 3 = 216`: `138,366 + 216 = 138,582`. For M models, the projected full budget is **`138,582 × M` executions**. This retains all three repetitions; the saving comes from restricting intervention evaluation to O = 1.
+
+For a multi-seed experiment, the runner must set and record a distinct model seed for each of the three repetitions where the model backend supports it. The question-order seed stays fixed within a configuration; three repeat indices alone do not establish three distinct model seeds.
+
+### Export the implemented v1 run plan
 
 Export a JSONL execution plan without contacting a model or writing study records:
 
