@@ -48,19 +48,28 @@ For occurrence O = n:
 - At O = 5-8, use all eight ordinary ACs once, then choose 2n - 8 distinct checks to repeat. Each ordinary AC appears at most twice.
 - Include the additional fixed AC exactly once, penultimate on the final page.
 
-Thus the number of content samples is `C(8,n) * C(8,2n)` for n <= 4 and `C(8,n) * C(8,2n-8)` for n >= 5.
+The calculations have two independent parts:
 
-| Occurrence / navigation pages | Theme selections | Ordinary AC selection | AC selections | Content samples | Total questions |
-| ---: | ---: | --- | ---: | ---: | ---: |
-| 1 | 8 | Choose 2 | 28 | 224 | 14 |
-| 2 | 28 | Choose 4 | 70 | 1,960 | 27 |
-| 3 | 56 | Choose 6 | 28 | 1,568 | 40 |
-| 4 | 70 | All 8 once | 1 | 70 | 53 |
-| 5 | 56 | All 8 + choose 2 to repeat | 28 | 1,568 | 66 |
-| 6 | 28 | All 8 + choose 4 to repeat | 70 | 1,960 | 79 |
-| 7 | 8 | All 8 + choose 6 to repeat | 28 | 224 | 92 |
-| 8 | 1 | All 8 twice | 1 | 1 | 105 |
-| **Total** | | | | **7,575** | |
+- **Content samples = theme selections × ordinary AC selections.** This is `C(8,n) * C(8,2n)` for n <= 4, and `C(8,n) * C(8,2n-8)` for n >= 5.
+- **Questions per sample = normal questions + ordinary AC instances + PAC = `11n + 2n + 1`.** The PAC adds one question, but no selection multiplier because there is only one PAC.
+
+For reference, `C(a,b) = a! / (b! * (a-b)!)`. For example, `C(8,2) = (8 * 7) / (2 * 1) = 28`.
+
+In the table, the last column shows **normal + ordinary AC + PAC**. At O = 5-8, all eight ordinary ACs are already included; the AC choice is only which ones to repeat.
+
+| O | Theme selections | Ordinary AC selection | AC selections | Content sample calculation | Questions per sample |
+| ---: | --- | --- | --- | --- | --- |
+| 1 | C(8,1) = 8 | Choose 2 of 8 | C(8,2) = 28 | 8 × 28 = **224** | 11 + 2 + 1 = **14** |
+| 2 | C(8,2) = 28 | Choose 4 of 8 | C(8,4) = 70 | 28 × 70 = **1,960** | 22 + 4 + 1 = **27** |
+| 3 | C(8,3) = 56 | Choose 6 of 8 | C(8,6) = 28 | 56 × 28 = **1,568** | 33 + 6 + 1 = **40** |
+| 4 | C(8,4) = 70 | All 8 once | C(8,8) = 1 | 70 × 1 = **70** | 44 + 8 + 1 = **53** |
+| 5 | C(8,5) = 56 | All 8 + choose 2 to repeat | C(8,2) = 28 | 56 × 28 = **1,568** | 55 + 10 + 1 = **66** |
+| 6 | C(8,6) = 28 | All 8 + choose 4 to repeat | C(8,4) = 70 | 28 × 70 = **1,960** | 66 + 12 + 1 = **79** |
+| 7 | C(8,7) = 8 | All 8 + choose 6 to repeat | C(8,6) = 28 | 8 × 28 = **224** | 77 + 14 + 1 = **92** |
+| 8 | C(8,8) = 1 | All 8 twice | C(8,8) = 1 | 1 × 1 = **1** | 88 + 16 + 1 = **105** |
+| **Total** | | | | **7,575 content samples** | |
+
+The total is `224 + 1,960 + 1,568 + 70 + 1,568 + 1,960 + 224 + 1 = 7,575`. These are content samples only; layouts, orders, and model repetitions have not yet been multiplied in.
 
 O = 1 exhaustively covers every theme x ordinary-AC-pair combination. Higher levels study long-horizon behavior under the specified balanced repetition policy. They do not enumerate every page assignment, ordering, or arbitrary repetition pattern. Samples at successive occurrence levels are **not nested prefixes**.
 
@@ -91,25 +100,44 @@ The item-heavy page is the exact concatenation of the navigation pages. Question
 
 O = 1 keeps only the existing single-page condition, labeled `navigation` for compatibility. There is no duplicate O = 1 item condition. Baselines remain unchanged.
 
-| Occurrence | Content samples | Navigation pages | Item pages | Orders per layout | Workflow variants |
-| ---: | ---: | ---: | ---: | ---: | ---: |
-| 1 | 224 | 1 | - | 3 | 672 |
-| 2 | 1,960 | 2 | 1 | 3 | 11,760 |
-| 3 | 1,568 | 3 | 1 | 3 | 9,408 |
-| 4 | 70 | 4 | 1 | 3 | 420 |
-| 5 | 1,568 | 5 | 1 | 3 | 9,408 |
-| 6 | 1,960 | 6 | 1 | 3 | 11,760 |
-| 7 | 224 | 7 | 1 | 3 | 1,344 |
-| 8 | 1 | 8 | 1 | 3 | 6 |
-| **Total** | **7,575** | | | | **44,778** |
+**Workflow variants = content samples × layout conditions × orders per layout.**
+
+- O = 1 has **one layout × three orders = 3 variants per sample**.
+- O = 2-8 has **two layouts × three orders = 6 variants per sample**.
+
+**Page count is not a multiplier.** For example, O = 5 has a five-page navigation layout and a one-page item layout: that is two layout conditions, not six. The three order seeds are shared across those two layouts.
+
+| O | Content samples | Navigation pages | Item pages | Layouts × orders | Variant calculation |
+| ---: | ---: | ---: | ---: | --- | --- |
+| 1 | 224 | 1 | - | 1 × 3 | 224 × 1 × 3 = **672** |
+| 2 | 1,960 | 2 | 1 | 2 × 3 | 1,960 × 2 × 3 = **11,760** |
+| 3 | 1,568 | 3 | 1 | 2 × 3 | 1,568 × 2 × 3 = **9,408** |
+| 4 | 70 | 4 | 1 | 2 × 3 | 70 × 2 × 3 = **420** |
+| 5 | 1,568 | 5 | 1 | 2 × 3 | 1,568 × 2 × 3 = **9,408** |
+| 6 | 1,960 | 6 | 1 | 2 × 3 | 1,960 × 2 × 3 = **11,760** |
+| 7 | 224 | 7 | 1 | 2 × 3 | 224 × 2 × 3 = **1,344** |
+| 8 | 1 | 8 | 1 | 2 × 3 | 1 × 2 × 3 = **6** |
+| **Total** | **7,575** | | | | **44,778 variants** |
+
+The total is `672 + 11,760 + 9,408 + 420 + 9,408 + 11,760 + 1,344 + 6 = 44,778`. Equivalently, separate the 224 O = 1 samples from the remaining `7,575 - 224 = 7,351` samples:
+
+`(224 × 1 × 3) + (7,351 × 2 × 3) = 672 + 44,106 = 44,778 variants`.
 
 ## Counts and run plans
 
-| Suite | Content samples | Layout/order variants | Three runs/variant/model |
-| --- | ---: | ---: | ---: |
-| AC surveys | 7,575 | 44,778 | 134,334 |
-| Theme-only baselines | 8 | 24 | 72 |
-| **Total** | **7,583** | **44,802** | **134,406** |
+One workflow variant identifies a **content sample + layout + order**. Executing it three times gives three runs of that same variant, not three new orders.
+
+**Runs per model = workflow variants × 3 repetitions.** The baseline has eight theme samples, one layout each, and three orders, so it adds `8 × 1 × 3 = 24` variants and `24 × 3 = 72` runs.
+
+| Suite | Content sample calculation | Variant calculation: samples × layouts × orders | Run calculation per model: variants × repeats |
+| --- | --- | --- | --- |
+| AC surveys, O = 1 | **224** | 224 × 1 × 3 = **672** | 672 × 3 = **2,016** |
+| AC surveys, O = 2-8 | 7,575 - 224 = **7,351** | 7,351 × 2 × 3 = **44,106** | 44,106 × 3 = **132,318** |
+| **AC subtotal** | 224 + 7,351 = **7,575** | 672 + 44,106 = **44,778** | 44,778 × 3 = **134,334** |
+| Theme-only baselines | **8** themes | 8 × 1 × 3 = **24** | 24 × 3 = **72** |
+| **Grand total** | 7,575 + 8 = **7,583** | 44,778 + 24 = **44,802** | 44,802 × 3 = **134,406** |
+
+The grand total adds the **AC subtotal + baselines**; the two AC detail rows explain that subtotal and are not added again. For M models, the full default schedule is `134,406 × M` executions. Changing the repetitions to R changes the per-model total to `44,802 × R`; it does not change the content samples or workflow variants.
 
 Export a JSONL execution plan without contacting a model or writing study records:
 
