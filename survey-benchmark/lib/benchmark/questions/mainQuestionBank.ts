@@ -1,4 +1,4 @@
-import { getOrderSeed, seededShuffle } from "@/lib/benchmark/ordering";
+import type { SurveySample } from "@/lib/benchmark/sampling";
 import { civicTheme } from "@/lib/benchmark/questions/themes/civic";
 import { consumerTheme } from "@/lib/benchmark/questions/themes/consumer";
 import { digitalTheme } from "@/lib/benchmark/questions/themes/digital";
@@ -15,8 +15,6 @@ import { wellbeingTheme } from "@/lib/benchmark/questions/themes/wellbeing";
 import { workTheme } from "@/lib/benchmark/questions/themes/work";
 import {
   QUESTION_KINDS,
-  type Occurrence,
-  type OrderId,
   type QuestionBank,
   type QuestionKind,
   type SurveyQuestion,
@@ -27,8 +25,8 @@ export type { ThemeId } from "@/lib/benchmark/questions/themes/types";
 export const MAIN_QUESTION_CONTENT_VERSION = 1 as const;
 
 /**
- * The canonical theme order is significant: seeded shuffles start from this
- * order, so do not rearrange it after benchmark data collection begins.
+ * Canonical display order. Sample enumeration uses the matching THEME_IDS order;
+ * keep both lists stable within a suite release.
  */
 const THEME_DEFINITIONS = [
   consumerTheme,
@@ -57,9 +55,8 @@ function entriesFor(kind: QuestionKind): MainQuestionEntry[] {
 }
 
 /**
- * Canonical question-type view consumed by the sampler. The editable source
- * remains theme-oriented in `questions/themes`; this transpose keeps the
- * benchmark's existing type-bucket sampling behavior unchanged.
+ * Canonical question-type lookup. The editable source remains theme-oriented in
+ * `questions/themes`; samples retrieve every type for each selected theme.
  */
 export const MAIN_QUESTION_BANK = {
   "single-radio": entriesFor("single-radio"),
@@ -134,39 +131,17 @@ function validateCanonicalBank() {
 
 validateCanonicalBank();
 
-/** Build one nested horizon prefix from a frozen sampling form. */
-export function sampleMainQuestionBank(
-  occurrence: Occurrence,
-  orderId: OrderId
-): QuestionBank {
-  const sampledBuckets = new Map<QuestionKind, MainQuestionEntry[]>();
-  for (const kind of QUESTION_KINDS) {
-    sampledBuckets.set(
-      kind,
-      seededShuffle(
-        MAIN_QUESTION_BANK[kind],
-        `${getOrderSeed(orderId)}:main-bucket:${kind}`
-      )
-    );
-  }
-
-  const questions: SurveyQuestion[] = [];
-  for (let block = 1; block <= occurrence; block += 1) {
-    for (const kind of QUESTION_KINDS) {
-      const sampled = sampledBuckets.get(kind)?.[block - 1];
-      if (!sampled) {
-        throw new Error(`[main question bank] Missing ${kind} sample for block ${block}.`);
-      }
-      questions.push({ ...sampled.question, block } as SurveyQuestion);
-    }
-  }
-
-  return {
-    id: `o${occurrence}`,
-    occurrence,
-    contentVersion: MAIN_QUESTION_CONTENT_VERSION,
-    questions,
-  };
+/** Content selection is independent of presentation order. */
+export function sampleMainQuestionBank(sample: SurveySample): QuestionBank {
+  const questions = sample.themeIds.flatMap((themeId, index) =>
+    QUESTION_KINDS.map((kind) => {
+      const entry = MAIN_QUESTION_BANK[kind].find((item) => item.themeId === themeId);
+      if (!entry) throw new Error(`[main question bank] Missing ${themeId}/${kind}.`);
+      return { ...entry.question, block: index + 1 } as SurveyQuestion;
+    })
+  );
+  return { id: `o${sample.occurrence}`, occurrence: sample.occurrence,
+    contentVersion: MAIN_QUESTION_CONTENT_VERSION, questions };
 }
 
 /** Supplies the 11 same-theme questions used by the separate O1 theme diagnostic. */

@@ -80,11 +80,6 @@ function validateDependencies(bank: QuestionBank) {
     for (const dependency of question.dependsOn ?? []) {
       assert(ids.has(dependency), `${question.id} depends on missing question ${dependency}.`);
       assert(dependency !== question.id, `${question.id} cannot depend on itself.`);
-      const dependencyQuestion = bank.questions.find((candidate) => candidate.id === dependency);
-      assert(
-        !dependencyQuestion || dependencyQuestion.block <= question.block,
-        `${question.id} cannot depend on a question in a later block.`
-      );
     }
   }
 
@@ -125,10 +120,12 @@ export function validateQuestionBank(bank: QuestionBank): QuestionBank {
       questions.length === QUESTION_KINDS.length,
       `${bank.id} block ${block} must contain ${QUESTION_KINDS.length} substantive questions.`
     );
-    for (const kind of QUESTION_KINDS) {
-      const count = questions.filter((question) => question.kind === kind).length;
-      assert(count === 1, `${bank.id} block ${block} must contain exactly one ${kind}; found ${count}.`);
-    }
+  }
+
+  // Each type occurs O times overall, without a per-page type restriction.
+  for (const kind of QUESTION_KINDS) {
+    const count = bank.questions.filter((question) => question.kind === kind).length;
+    assert(count === bank.occurrence, `${bank.id} must contain ${bank.occurrence} ${kind}; found ${count}.`);
   }
 
   validateDependencies(bank);

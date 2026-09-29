@@ -1,69 +1,41 @@
 import { WorkflowLauncher } from "@/components/WorkflowLauncher";
 import { ThemeLauncher } from "@/components/ThemeLauncher";
 import { THEMES } from "@/lib/benchmark/questions/mainQuestionBank";
-import {
-  ATTENTION_CHECKS_PER_BLOCK,
-  OCCURRENCES,
-  RENDERED_QUESTIONS_PER_BLOCK,
-  SUBSTANTIVE_QUESTIONS_PER_BLOCK,
-} from "@/lib/benchmark/schema";
+import { getSamplingSummary } from "@/lib/benchmark/sampling";
+import { SUITE_VERSION } from "@/lib/benchmark/schema";
 
 export default function HomePage() {
+  const sampling = getSamplingSummary();
   return (
     <main className="home-shell">
       <header className="hero">
-        <p className="eyebrow">Survey Benchmark · suite v0 · standard presentation</p>
-        <h1>Fixed survey workflows for web-agent evaluation</h1>
-        <p>
-          Eight occurrence levels are crossed with item-heavy and navigation-heavy layouts. Every condition has three
-          deterministic, matched question orders.
-        </p>
+        <p className="eyebrow">Survey Benchmark | suite {SUITE_VERSION} | standard presentation</p>
+        <h1>Survey coverage and long-horizon agent behavior</h1>
+        <p>7,575 attention-check samples and eight theme-only baselines, each with three reproducible question orders.
+          At O = 2-8, matched navigation-heavy and item-heavy variants compare multiple pages with one long page.</p>
       </header>
-
       <ThemeLauncher themes={THEMES} />
-      <WorkflowLauncher />
-
+      <WorkflowLauncher sampling={sampling} />
       <section className="matrix-card" aria-labelledby="matrix-heading">
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Blueprint</p>
-            <h2 id="matrix-heading">Workflow matrix</h2>
-          </div>
-          <a href="/api/manifest">Open machine-readable manifest</a>
+          <div><p className="eyebrow">Sampling design</p><h2 id="matrix-heading">Occurrence levels</h2></div>
+          <a href="/api/manifest">Open paginated manifest</a>
         </div>
         <div className="table-scroll">
           <table>
-            <thead>
-              <tr>
-                <th>Occurrence</th>
-                <th>Substantive</th>
-                <th>Attention checks</th>
-                <th>Displayed items</th>
-                <th>Item-heavy pages</th>
-                <th>Navigation-heavy pages</th>
-                <th>Order forms</th>
-              </tr>
-            </thead>
-            <tbody>
-              {OCCURRENCES.map((occurrence) => (
-                <tr key={occurrence}>
-                  <td>o{occurrence}</td>
-                  <td>{occurrence * SUBSTANTIVE_QUESTIONS_PER_BLOCK}</td>
-                  <td>{occurrence * ATTENTION_CHECKS_PER_BLOCK}</td>
-                  <td>{occurrence * RENDERED_QUESTIONS_PER_BLOCK}</td>
-                  <td>1</td>
-                  <td>{occurrence}</td>
-                  <td>3 matched orders</td>
-                </tr>
-              ))}
-            </tbody>
+            <thead><tr><th>Occurrence</th><th>Theme selections</th><th>AC selections</th>
+              <th>Samples</th><th>Questions</th><th>Navigation pages</th><th>Item pages</th><th>Orders per layout</th></tr></thead>
+            <tbody>{sampling.map((row) => <tr key={row.occurrence}>
+              <td>{row.occurrence}</td><td>{row.themeSelectionCount}</td><td>{row.attentionSelectionCount}</td>
+              <td>{row.sampleCount.toLocaleString("en-US")}</td><td>{row.questionCount}</td>
+              <td>{row.navigationPageCount}</td><td>{row.itemPageCount ?? "-"}</td><td>3</td>
+            </tr>)}</tbody>
           </table>
         </div>
-        <p className="matrix-note">
-          Each logical block contains 11 substantive questions and two embedded attention checks. The fixed delayed-
-          recall placeholder appears once in the final block, as its penultimate item. At o1, both layouts contain one
-          13-item page; keeping both labels provides a renderer and evaluation-pipeline parity check.
-        </p>
+        <p className="matrix-note">O = 1-4 selects ordinary ACs without repetition. O = 5-8 includes all eight,
+          then selects which appear twice. Navigation pages contain 11 normal questions and two ordinary ACs;
+          the final page adds the fixed penultimate AC. Item-heavy surveys place the identical sequence on one page.
+          O = 1 has one layout. Welcome screens are separate from question pages.</p>
       </section>
     </main>
   );

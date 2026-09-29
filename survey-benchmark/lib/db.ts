@@ -83,5 +83,16 @@ export function getDatabase(): Database.Database {
   if (!submissionColumns.has("theme_id")) {
     database.exec("ALTER TABLE submissions ADD COLUMN theme_id TEXT");
   }
+  // Additive migration: existing v0 study records retain their original metadata.
+  for (const [column, definition] of [
+    ["sample_id", "TEXT"],
+    ["selected_theme_ids", "TEXT"],
+    ["ordering_version", "INTEGER"],
+    ["order_seed", "TEXT"],
+    ["repeat_index", "INTEGER"],
+  ]) {
+    if (!submissionColumns.has(column)) database.exec(`ALTER TABLE submissions ADD COLUMN ${column} ${definition}`);
+  }
+  database.exec("CREATE INDEX IF NOT EXISTS idx_submissions_sample ON submissions(suite_version, sample_id, order_id)");
   return database;
 }

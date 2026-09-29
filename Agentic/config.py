@@ -42,7 +42,7 @@ def runtime_defaults():
 
     return {
         "base_url": setting("SURVEY_TARGET", "AGENTIC_BASE_URL", "http://127.0.0.1:3001"),
-        "suite_version": os.getenv("SURVEY_VERSION", "v0"),
+        "suite_version": os.getenv("SURVEY_VERSION", "v1"),
         "occurrence": os.getenv("SURVEY_OCCURRENCE", "o1"),
         "orders": os.getenv("SURVEY_ORDERS", "order01 order02 order03").split(),
         "themes": os.getenv("SURVEY_THEMES", "all").split(),

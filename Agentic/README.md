@@ -60,7 +60,7 @@ LLM_TEMPERATURE=0
 MODEL_NAME=
 
 SURVEY_TARGET=http://127.0.0.1:3001
-SURVEY_VERSION=v0
+SURVEY_VERSION=v1
 SURVEY_OCCURRENCE=o1
 SURVEY_THEMES=all
 SURVEY_ORDERS=order01 order02 order03
@@ -84,7 +84,7 @@ must match its manifest's suite version. `SURVEY_THEMES` accepts `all` or a
 space-separated list such as `work finance`; that list controls theme sequence.
 The theme experiment uses one item page, so `SURVEY_LAYOUTS` is no longer used.
 The runner rejects embedded-check manifests rather than silently mixing them into
-this experiment. The site retains its original embedded-check workflows separately.
+this experiment. The site provides the v1 AC/horizon sample suite separately; this runner still selects only the no-AC baselines. See [the benchmark README](../survey-benchmark/README.md) for its sampling design and execution-plan exporter.
 
 ## Run
 
@@ -242,6 +242,85 @@ scores still require a matching read-only database via `AGENTIC_DB_PATH`.
 
 For `run`, `--runs-dir` is the root beneath which model/theme folders are created.
 For `report` / `evaluate`, it selects the directory tree to analyze.
+
+## Plot and share results
+
+The plotting scripts run offline. They read each `run_summary.json` once, so they
+do not double-count the comparison files saved at different directory levels.
+They do not modify saved results, contact LM Studio, or capture screenshots.
+
+From `Agentic`, install the optional plotting dependency and generate all charts:
+
+```powershell
+.venv\Scripts\python.exe -m pip install -r requirements-plots.txt
+.venv\Scripts\python.exe plot_results.py
+Start-Process runs\plots\index.html
+```
+
+The report is saved in `Agentic/runs/plots/index.html`. It contains charts and a
+model summary table, with PNG/PDF downloads and CSV tables for Excel. Share the
+whole `plots` folder to keep the HTML images available, or use individual PNGs in
+slides and PDFs in a document. `--formats png pdf svg` also exports editable SVGs.
+
+| Chart | Question it answers |
+| --- | --- |
+| `01_overview` | How many surveys submitted, how many questions were valid, and how many surveys had every question valid? |
+| `02_question_types` | Which of the 11 interaction formats succeed or fail? Counts are pooled over selected themes/orders. |
+| `03_theme_order` | Does completion vary across themes and the three question orders? Each cell includes valid/total counts and number of runs. |
+| `04_attempts` | How many questions use one, two, or three model calls, and which finish unanswered? |
+| `05_efficiency` | How long does each run take, and how frequently do plan, answer-validation, request, and action errors occur? |
+
+Run individual scripts from `Agentic`:
+
+```powershell
+.venv\Scripts\python.exe -m plots.overview
+.venv\Scripts\python.exe -m plots.formats
+.venv\Scripts\python.exe -m plots.themes
+.venv\Scripts\python.exe -m plots.attempts
+.venv\Scripts\python.exe -m plots.efficiency
+```
+
+Or select charts, models, a batch, and a separate output directory:
+
+```powershell
+.venv\Scripts\python.exe plot_results.py --plots formats attempts
+.venv\Scripts\python.exe plot_results.py --models meta-llama-3-8b-instruct
+.venv\Scripts\python.exe plot_results.py --batch 20260914T003048Z-ef770e57 --output-dir runs/plots/first-batch
+.venv\Scripts\python.exe plot_results.py --runs-dir runs/meta-llama-3-8b-instruct/o1_work --output-dir runs/plots/work
+```
+
+Relative paths resolve from `Agentic`, regardless of the shell's current directory.
+All scripts accept `--runs-dir`, `--output-dir`, `--models`, `--batch`, and
+`--formats`. The main script additionally supports `--plots` and builds the HTML
+report and CSV tables. It always includes PNG previews for the HTML report.
+
+Multiple models appear together when their recorded protocol settings match.
+Different prompt versions, behavior/observation modes, endpoints, temperatures,
+turn limits, conditions, or content versions produce separate `protocol-*`
+subfolders and an index linking to each report. Change `PROMPT_VERSION` when
+changing the prompt: edits using the same recorded version cannot be distinguished.
+Check the report's coverage table before comparing models with different themes,
+orders, or batch counts. By default, matching runs across batches are pooled;
+use `--batch` for a single experiment. Running summaries are excluded.
+
+Interpretation:
+
+- Overall validity and theme/order rates include questions from failed submissions
+  in the denominator. Question-type rates only include accepted submissions.
+- Attempt counts use finalized local question records, including those from runs
+  that did not submit. A partially recorded question in an interrupted run may
+  have model calls but no final question record and is excluded from this chart.
+- A cleared invalid answer appears as **skipped**, not invalid, at submission.
+- Error counters count events, can overlap, and are not unique question counts.
+- No confidence intervals are inferred from a single run per theme/order. These
+  plots describe the collected sample and do not establish reliable order effects.
+- Validity measures form constraints, not semantic answer quality. DOM image
+  selection does not demonstrate visual understanding. Attention scores are
+  inapplicable to these theme-only runs.
+
+`plot_manifest.json` records the selected settings and source run paths for each
+report. Regenerate after adding runs. Existing chart/report files with the same
+names are replaced; original run artifacts are left intact.
 
 ## Verification
 

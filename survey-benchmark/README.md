@@ -1,162 +1,207 @@
 # Survey Benchmark
 
-A standalone Next.js application for the fixed survey-workflow benchmark. The existing `survey-site` application is not used or modified by this project.
+A standalone Next.js application on port **3001** for testing web agents on optional survey questions, embedded attention checks, and increasing survey horizons. The `survey-site` app is separate.
 
-## Theme-only o1 runs
+## Finalized design (suite v1)
 
-The launcher also provides eight single-theme surveys: consumer, digital, wellbeing,
-education, work, finance, civic, and lifestyle. Each contains exactly **11 substantive
-questions and no attention checks**, on one question page after the welcome screen.
+The normal-question bank contains **8 themes x 11 question types = 88 questions**. The attention-check bank contains **8 ordinary checks** plus **1 fixed penultimate check**.
 
-Routes follow `/survey/themes/<theme>/order01` (also `order02` and `order03`).
-All three orders use the same 11 questions for that theme, in distinct deterministic
-orders. These are separate workflows from the embedded-check suite described below;
-their IDs contain `o1-theme-<theme>` and their attention content version is 0.
+A **content sample** selects whole themes and an ordinary-AC multiset. An **order** fixes the question sequence and logical navigation blocks. A **layout** renders those blocks across pages or concatenates them on one page. A **run** is a fresh agent execution of a sample/layout/order variant. These are separate dimensions.
 
-`/api/manifest` includes `themes` and `themeWorkflows` in addition to the existing
-48-instance `workflows` list. Submissions store `theme_id`, zero attention counts,
-and return per-question valid/invalid/skipped classifications. Subjective answers
-are evaluated for format/constraint validity, not semantic correctness.
+### Theme-only baselines
 
-The [Agentic runner](../Agentic/README.md) runs the three orders of each theme before
-switching themes. The default is 24 runs per model; five repeats per order gives 120.
-It answers one question at a time, with at most three model turns per question.
-
-## Naming
-
-- `v0` is the benchmark-suite release.
-- `standard` is the first presentation profile, implemented with ordinary semantic HTML and standard web-development
-  practices.
-- Workflow IDs follow `v0-standard-o{occurrence}-{layout}-order{variant}`. Example:
-  `v0-standard-o2-navigation-order03`.
-
-This keeps the suite version independent of future observation-exposure profiles.
-
-## Blueprint
-
-There are 16 labeled workflow conditions and three frozen, seeded forms per condition:
-
-- The substantive bank has 11 operational formats: ten text-based interaction formats plus one image-grounded
-  single-selection format. The image format reuses radio selection; it is treated as a separate benchmark stratum
-  because its stimulus modality is different.
-- The canonical substantive bank contains 88 questions: 11 format buckets × 8 survey themes. Within each frozen form,
-  the eight theme entries are independently permuted inside every format bucket. Block `j` takes entry `j` from each
-  bucket, and `o{k}` takes Blocks 1 through `k`.
-- Every occurrence block contains exactly 11 substantive questions, one from each operational format, plus exactly two
-  embedded attention checks drawn from a separate attention-check bank.
-- At `o{k}`, a workflow therefore contains `11k` substantive questions, `2k` attention checks and `13k` displayed items.
-- Occurrence levels `o1` through `o8` contain 13 through 104 displayed items.
-- `item` renders the complete ordered bank on one logical page.
-- `navigation` renders one complete 13-item block per page.
-- `order01` through `order03` are frozen seeded draws. A reload never silently changes content or order.
-- Matched item/navigation instances use the identical flattened question sequence.
-- Every canonical workflow URL begins with the same welcome page and `Start Survey` action.
-- All questions are optional; Next and Submit never require a response.
-- Navigation workflows provide both Previous and Next controls, with responses retained across pages.
-- Submissions distinguish valid, attempted-but-invalid and skipped questions.
-
-At `o1`, both layouts have one 13-item page. They are retained as a renderer/evaluation parity check.
-The welcome page is tracked separately and is not included in the question-page count.
-Its shared text can be edited in `lib/benchmark/welcome.ts`.
-
-The attention-check bank has eight rotating mechanisms and one fixed delayed-recall placeholder. Non-final blocks use
-two rotating checks; the final block uses one rotating check plus the fixed placeholder. Consequently, `o{k}` uses
-`2k - 1` rotating placements and one fixed placement. The fixed check is always item 12 of the final 13-item block—the
-penultimate question of the final page and of the one-page layout. The placeholder remains deliberately unscored until
-its source question and answer resolver are specified in the bank file.
-
-The eight rotating checks are fixed operational instances, not evidence that the benchmark covers every possible
-attention mechanism. At long horizons the rotating instances repeat according to one of three frozen schedules; this
-provides controlled exposure without evaluating every possible check pairing. Exact check identity and position are
-matched across layouts. Private answer keys remain server-side and the browser receives only opaque public IDs.
-
-## Editing questions
-
-The 88 substantive questions are organized into eight author-facing theme files:
+Eight samples, one per theme, each with 11 normal questions and no ACs. Each has three frozen question orders on one question page:
 
 ```text
-lib/benchmark/questions/themes/
-  consumer.ts
-  digital.ts
-  wellbeing.ts
-  education.ts
-  work.ts
-  finance.ts
-  civic.ts
-  lifestyle.ts
+/survey/themes/consumer/order01
+/survey/themes/work/order03
 ```
 
-Each file contains that theme's label and one question for every operational format, keyed by question type. Edit the
-prompt, choices, range, or other question settings in the relevant theme file. Keep the `id(...)` call and the object
-key unchanged so canonical IDs and question types remain stable.
+### Surveys with attention checks
 
-`lib/benchmark/questions/mainQuestionBank.ts` is now aggregation machinery rather than an authoring file. It transposes
-the eight theme-oriented definitions into the same 11 operational-format buckets used by deterministic sampling. The
-three forms therefore do not duplicate the 88 canonical items: `o{k}` always selects the first `k` entries of every
-shuffled bucket, substantive selections remain nested within a form, and `o8` contains every canonical item exactly
-once. The aggregator also exports `getThemeDiagnosticQuestionBank(themeId)` for constructing the separate 11-item,
-single-theme diagnostic forms.
+#### Sampling quick reference
 
-The `q.*` helpers provide options and constraints. Optional final arguments customize choices or ranges:
+**Occurrence counts normal question types, not repeated copies of the same normal question.** At O = n, choose n different themes and take all 11 questions from each. There are n questions of each type in the survey, and no normal question repeats.
 
-```ts
-q.radio("o02-b01-radio", 1, "Which option do you prefer?", ["Alpha", "Beta", "Gamma"]),
-q.slider("o02-b01-slider", 1, "Choose a value.", { min: 1, max: 7, step: 1 }),
-q.imageSingleSelect("o02-b01-image-single-select", 1, "Which image do you prefer?", [
-  { label: "Option A", imageSrc: "/images/a.jpg", imageAlt: "Description of option A" },
-  { label: "Option B", imageSrc: "/images/b.jpg", imageAlt: "Description of option B" },
-]),
+Content sampling is exhaustive over these two choices, before any ordering or page layout:
+
+1. **Themes:** choose n of the eight themes, ignoring their order: `C(8,n)` selections.
+2. **Ordinary ACs:** choose a survey-wide AC multiset. For O = 1-4, select `2n` distinct ACs. For O = 5-8, include all eight once and choose `2n-8` distinct ACs to appear a second time.
+3. **Cross the selections:** every theme selection is paired with every allowed AC selection. Add the one fixed penultimate AC (PAC); it contributes no selection multiplier.
+
+`C(a,b)` means "choose b distinct elements from a, without regard to order." We do **not** independently choose one of 28 AC pairs for every page, and we do **not** assemble higher horizons from O = 1 page blocks. AC allocation to pages is part of ordering, not an additional content-sample dimension.
+
+Worked examples:
+
+- **O = 2:** choose two themes (`28` choices), then four distinct ordinary ACs (`70` choices): `28 * 70 = 1,960` samples. Each has 22 normal questions + 4 ordinary ACs + 1 PAC = **27 questions**.
+- **O = 5:** choose five themes (`56` choices); include all eight ordinary ACs, then choose two to repeat (`28` choices): `56 * 28 = 1,568` samples. Each has 55 normal questions + 10 ordinary AC instances + 1 PAC = **66 questions**.
+- **O = 8:** use every theme and every ordinary AC twice: **one content sample**, containing 88 normal questions + 16 ordinary AC instances + 1 PAC = **105 questions**.
+
+After selecting content, create **three seeded orders**. O = 2-8 renders each order in both navigation-heavy and item-heavy layouts with the exact same flattened sequence. O = 1 has only one layout. Repeated model runs reuse an existing order; they do not create new content samples or new orders.
+
+To verify this reference against the implementation, run `npm test` from `survey-benchmark`. The suite checks all 7,575 content samples, their repetition limits, and all 44,778 AC layout/order variants. The live `/api/manifest` response also includes a `sampling` table generated by [sampling.ts](lib/benchmark/sampling.ts). The eight no-AC baseline samples are counted separately.
+
+For occurrence O = n:
+
+- Select n distinct themes and use all 11 questions from each theme. Each normal question type occurs n times across the survey.
+- At O = 1-4, choose 2n distinct ordinary ACs from the bank of eight.
+- At O = 5-8, use all eight ordinary ACs once, then choose 2n - 8 distinct checks to repeat. Each ordinary AC appears at most twice.
+- Include the additional fixed AC exactly once, penultimate on the final page.
+
+Thus the number of content samples is `C(8,n) * C(8,2n)` for n <= 4 and `C(8,n) * C(8,2n-8)` for n >= 5.
+
+| Occurrence / navigation pages | Theme selections | Ordinary AC selection | AC selections | Content samples | Total questions |
+| ---: | ---: | --- | ---: | ---: | ---: |
+| 1 | 8 | Choose 2 | 28 | 224 | 14 |
+| 2 | 28 | Choose 4 | 70 | 1,960 | 27 |
+| 3 | 56 | Choose 6 | 28 | 1,568 | 40 |
+| 4 | 70 | All 8 once | 1 | 70 | 53 |
+| 5 | 56 | All 8 + choose 2 to repeat | 28 | 1,568 | 66 |
+| 6 | 28 | All 8 + choose 4 to repeat | 70 | 1,960 | 79 |
+| 7 | 8 | All 8 + choose 6 to repeat | 28 | 224 | 92 |
+| 8 | 1 | All 8 twice | 1 | 1 | 105 |
+| **Total** | | | | **7,575** | |
+
+O = 1 exhaustively covers every theme x ordinary-AC-pair combination. Higher levels study long-horizon behavior under the specified balanced repetition policy. They do not enumerate every page assignment, ordering, or arbitrary repetition pattern. Samples at successive occurrence levels are **not nested prefixes**.
+
+### Three reproducible orders per sample
+
+`order01`, `order02`, and `order03` use separate seeds incorporating the suite version, ordering version, and sample ID. Each seed is shared across the matched layouts. Reloading a URL reproduces its exact content, pages, and positions. First construct the navigation sequence as follows, then flatten it for the item-heavy variant:
+
+1. Shuffle all selected normal questions together, respecting explicit `dependsOn` dependencies.
+2. Allocate 11 normal questions per page. Themes may mix, and pages need not contain every question type.
+3. Redistribute the selected ordinary AC instances into two different checks per page. Repeated copies of a check must occupy different pages.
+4. Randomize ordinary AC positions among the normal questions.
+5. Insert the additional fixed AC immediately before the last question of the final page.
+
+In navigation-heavy layouts, regular pages contain **13 questions** and the final page contains **14**. Each survey contains **13n + 1 questions**, regardless of layout. The final question may be normal or an ordinary AC. The welcome screen is separate from question pages.
+
+All three orders contain the same normal-question IDs and the same AC-instance IDs. Copies of a repeated AC have distinct opaque IDs and independently stored answers. AC allocation and question positions may change across orders. Three sampled layouts probe order sensitivity; they do not guarantee every question-position or theme-AC encounter.
+
+All questions remain optional. Navigation-heavy Previous/Next controls preserve answers; item-heavy surveys offer Submit on their single question page. Submit accepts skipped or invalid responses for later classification.
+
+### Matched navigation-heavy and item-heavy variants
+
+For every O = 2-8 content sample and every order, there are two layout conditions:
+
+- **Navigation-heavy:** n question pages. Each contains 11 normal questions and two ordinary ACs; the final page adds the PAC.
+- **Item-heavy:** one question page containing all `11n` normal questions, `2n` ordinary AC instances, and the PAC (`13n + 1` questions total).
+
+The item-heavy page is the exact concatenation of the navigation pages. Question IDs, prompts, answer keys, AC copies, order seeds, and flattened positions match; only page boundaries differ. The PAC is penultimate in both. Repeated ordinary ACs at O = 5-8 therefore appear twice on the single item-heavy page. Question `block` metadata continues to identify the shared logical navigation block, not the rendered page index in the item condition.
+
+O = 1 keeps only the existing single-page condition, labeled `navigation` for compatibility. There is no duplicate O = 1 item condition. Baselines remain unchanged.
+
+| Occurrence | Content samples | Navigation pages | Item pages | Orders per layout | Workflow variants |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 224 | 1 | - | 3 | 672 |
+| 2 | 1,960 | 2 | 1 | 3 | 11,760 |
+| 3 | 1,568 | 3 | 1 | 3 | 9,408 |
+| 4 | 70 | 4 | 1 | 3 | 420 |
+| 5 | 1,568 | 5 | 1 | 3 | 9,408 |
+| 6 | 1,960 | 6 | 1 | 3 | 11,760 |
+| 7 | 224 | 7 | 1 | 3 | 1,344 |
+| 8 | 1 | 8 | 1 | 3 | 6 |
+| **Total** | **7,575** | | | | **44,778** |
+
+## Counts and run plans
+
+| Suite | Content samples | Layout/order variants | Three runs/variant/model |
+| --- | ---: | ---: | ---: |
+| AC surveys | 7,575 | 44,778 | 134,334 |
+| Theme-only baselines | 8 | 24 | 72 |
+| **Total** | **7,583** | **44,802** | **134,406** |
+
+Export a JSONL execution plan without contacting a model or writing study records:
+
+```powershell
+npm run export:plan -- --output run-plan.jsonl
+npm run export:plan -- --occurrence 8 --no-baselines --repeats 3 --output o8-plan.jsonl
+# Optional: export only one AC layout
+npm run export:plan -- --occurrence 8 --layout item --no-baselines --output o8-item-plan.jsonl
 ```
 
-The eight rotating attention checks, their private answer keys, the three schedules, and the fixed delayed-recall
-placeholder are all defined in
-`lib/benchmark/attentionChecks.ts`. They are composed into workflows only after the substantive bank has been
-validated and ordered, so adding checks does not alter substantive-question inclusion.
+The default is three repetitions per order. Both layouts are included by default at O = 2-8. The O = 8 example produces 18 executions (two layouts x three orders x three repeats); `--layout item` or `--layout navigation` filters the AC suite to one layout. Baselines are included unless `--no-baselines` is passed. Each row identifies the workflow, content sample, layout, order seed, repeat index, and URL. Without `--output`, JSONL is written to stdout. Output files are created exclusively: choose a new path instead of overwriting an existing plan. The exporter lists planned work; it does not execute agent runs. A runner should create a fresh browser session and `runId` for every row and may include `repeatIndex` in its submission. Repeating an order never reshuffles it, and a repetition is not automatically a different model seed.
 
-To create a dependency while keeping deterministic orders valid, add `dependsOn` with an object spread:
+Report results separately by occurrence level and layout, and compare matched sample/order pairs; pooled scores would overweight the levels with more samples. The fixed check remains an **unscored delayed-recall placeholder**, and the two CAPTCHA checks retain their existing placeholder stimuli. These content limitations are unchanged by the sampling implementation.
 
-```ts
-{
-  ...q.shortText("o02-b02-short-text", 2, "Briefly explain your earlier selection."),
-  dependsOn: ["o02-b01-radio"],
-},
+The existing [Agentic runner](../Agentic/README.md) still targets only the theme-only baselines. Set its `SURVEY_VERSION=v1` when using this release; its independently configured repetition count is not changed by the benchmark's plan defaults. The exporter supplies a plan for extending a runner to the full AC suite.
+
+## Routes and discovery
+
+Stable sample IDs use `o{occurrence}-s{four-digit index}`, for example `o2-s0001`. Within each occurrence, theme combinations follow the canonical `THEME_IDS` order and AC combinations follow bank order, with AC combinations varying fastest. Keep both orders fixed within a release.
+
+```text
+/survey/samples/o1-s0001/order01
+/survey/samples/o2-s1960/order03
+/survey/samples/o8-s0001/order02
+/survey/samples/o8-s0001/order02/item
 ```
 
-Keep IDs stable after collecting results. Increment `MAIN_QUESTION_CONTENT_VERSION` or
-`ATTENTION_CHECK_CONTENT_VERSION` whenever the corresponding bank content changes.
+Existing navigation URLs and workflow IDs are preserved, for example `/survey/samples/o2-s0001/order03` and `v1-standard-o2-s0001-order03`. Item URLs append `/item`; their workflow IDs add `-item` before the order, for example `v1-standard-o2-s0001-item-order03`. Separate workflow IDs keep progress and submissions isolated across layouts. Baseline IDs use `v1-standard-o1-theme-work-order01`. Samples are rendered on demand; the build does not pre-render 44,778 AC variants.
 
-Build-time validation rejects incorrect substantive totals, missing formats, duplicate IDs/options, invalid image
-metadata or constraints, missing/cyclic dependencies and duplicate order variants. Workflow validation separately
-requires every navigation page to contain 11 substantive questions and two attention checks and verifies that the
-fixed placeholder is penultimate in the final block.
+`GET /api/manifest` returns suite totals, the sampling table, all 24 baseline `themeWorkflows`, and a **paginated** `workflows` list for the AC suite. The default page contains 100 layouts; the maximum is 300. Follow `next` until it is null. `workflowInstanceCount` is the suite-wide AC-layout count, while `pagination.total` is the filtered count.
 
-## Install and run
+Supported query parameters:
+
+| Parameter | Meaning |
+| --- | --- |
+| `occurrence=1` | Filter to O = 1 (integer 1-8) |
+| `sampleId=o2-s0001` | Filter to a content sample |
+| `order=order02` | Filter to an order |
+| `layout=item` | Filter to `item` or `navigation` |
+| `offset=100` | Zero-based layout offset |
+| `limit=100` | Layouts per response, 1-300 |
+
+Example: `/api/manifest?sampleId=o8-s0001` returns six variants (three orders for each layout); adding `&layout=item` returns the three item-heavy orders. `occurrence=1&layout=item` returns an empty list. Each descriptor includes layout, selected theme IDs, content and ordering versions, seed, counts, ordered question IDs, and per-page question IDs. It does not expose private AC identifiers or answer keys. Invalid filter values return HTTP 400; incompatible valid filters return an empty list.
+
+## Storage and scoring
+
+The app creates `benchmark.sqlite` when the first event or submission is logged. Events record welcome/start, page views, page exits, and submission. Submissions record:
+
+- Suite/workflow/sample IDs, selected themes, occurrence, layout, order seed and version, optional repeat index, session and run IDs.
+- Content versions, ordered question IDs, and answers.
+- Valid, invalid, and skipped response counts.
+- AC attempts, passes, failures, skipped checks, and the unscored fixed placeholder, with a result for each repeated instance.
+
+Normal-question validity checks format and constraints, not the semantic truth of subjective answers. The submission response and submission event include a separate `substantiveSummary`. Existing total answer counts include both normal questions and ACs. The server reconstructs the sample/layout and rejects mismatched identities, content versions, question orders, or unexpected answer IDs.
+
+Schema changes are additive. Existing v0 records are retained, with new metadata fields null. v0 workflow IDs and the former `/survey/standard/oN/item|navigation/orderNN` routes are retired rather than reinterpreted as new samples. The new matched layouts use sample-specific routes and the finalized sampling rules. Baseline URLs are unchanged but now identify v1 workflows. Session storage uses the versioned workflow ID, so older progress cannot be reused accidentally.
+
+Set `SURVEY_DB_PATH=:memory:` for smoke tests that must not write study records. Session cookies support local HTTP by default; set `SURVEY_COOKIE_SECURE=true` behind HTTPS.
+
+## Editing the banks
+
+Normal questions live in `lib/benchmark/questions/themes/`:
+
+```text
+consumer.ts  digital.ts  wellbeing.ts  education.ts
+work.ts      finance.ts  civic.ts      lifestyle.ts
+```
+
+Each theme defines exactly one question per operational type. Keep canonical IDs and object keys stable. `mainQuestionBank.ts` aggregates these definitions and materializes selected themes; it no longer performs order-dependent content sampling.
+
+`lib/benchmark/attentionChecks.ts` contains the eight ordinary definitions, their private scoring keys, and the fixed placeholder. There are no hard-coded per-order AC schedules. `sampling.ts` enumerates content samples, `ordering.ts` shuffles normal questions, and `buildWorkflow.ts` composes pages.
+
+Use the existing `q.*` factories to edit prompts, options, images, or constraints. `dependsOn` is respected across the global ordering, but every dependency must be present in the selected sample. Increment `MAIN_QUESTION_CONTENT_VERSION` or `ATTENTION_CHECK_CONTENT_VERSION` when bank content changes; increment `ORDERING_VERSION` for ordering changes. Change the suite version for changes to sample enumeration or the experimental design.
+
+The legacy image at `docs/survey-benchmark-methodology.png` describes the old design and is retained only as a historical artifact; the table and rules in this README describe v1.
+
+## Install, run, and validate
 
 Requires Node.js 20+ and npm 10+.
 
-```bash
+```powershell
 npm install
 npm run dev
 ```
 
-Open `http://localhost:3001`. Port 3001 avoids conflicting with the original `survey-site` application on port 3000.
+Open `http://localhost:3001`. On PowerShell systems that block `npm.ps1`, use `npm.cmd` instead of `npm`.
 
-Useful checks:
-
-```bash
+```powershell
 npm run typecheck
 npm run lint
+npm test
 npm run build
 ```
 
-The machine-readable 48-instance scaffold manifest is available at `http://localhost:3001/api/manifest`.
-
-## Stored results
-
-The app creates `benchmark.sqlite` on the first logged event. It records page-level events and completed submissions,
-including the workflow ID, content version, fixed order, ordered question IDs and answers. Attention-check attempts,
-passes, failures and skipped checks are scored with the private key and stored separately. The database and SQLite WAL
-files are ignored by Git.
-Set `SURVEY_DB_PATH=:memory:` for temporary smoke tests that must not write study records to disk.
-
-Session cookies are local-HTTP friendly by default. Set `SURVEY_COOKIE_SECURE=true` when deploying behind HTTPS.
+The tests enumerate every content sample and all 44,778 AC variants, check exact item/navigation sequence parity, same-content/different-order behavior, navigation page quotas, repetition limits, unique instance IDs, the fixed position, baseline separation, plan totals, API validation/scoring, and additive database migration. Node-only tooling uses the installed TypeScript compiler; no extra test runner is required.

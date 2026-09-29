@@ -1,4 +1,6 @@
-export const SUITE_VERSION = "v0" as const;
+export const SUITE_VERSION = "v1" as const;
+export const ORDERING_VERSION = 1 as const;
+export const DEFAULT_RUNS_PER_ORDER = 3 as const;
 export const PRESENTATION_PROFILES = ["standard"] as const;
 export const OCCURRENCES = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 export const LAYOUT_MODES = ["item", "navigation"] as const;
@@ -18,16 +20,17 @@ export const QUESTION_KINDS = [
   "image-single-select",
 ] as const;
 
-export const SUBSTANTIVE_QUESTIONS_PER_BLOCK = QUESTION_KINDS.length;
-export const ATTENTION_CHECKS_PER_BLOCK = 2 as const;
-export const RENDERED_QUESTIONS_PER_BLOCK = 13 as const;
-
 export type PresentationProfile = (typeof PRESENTATION_PROFILES)[number];
 export type Occurrence = (typeof OCCURRENCES)[number];
 export type OccurrenceId = `o${Occurrence}`;
 export type LayoutMode = (typeof LAYOUT_MODES)[number];
 export type OrderId = (typeof ORDER_IDS)[number];
 export type QuestionKind = (typeof QUESTION_KINDS)[number];
+
+/** O1 has one condition; higher horizons compare matched navigation/item layouts. */
+export function getSampleLayouts(occurrence: Occurrence): readonly LayoutMode[] {
+  return occurrence === 1 ? ["navigation"] : ["navigation", "item"];
+}
 
 export type ChoiceOption = {
   value: string;
@@ -137,6 +140,11 @@ export type WorkflowPage = {
 
 export type Workflow = {
   id: string;
+  sampleId: string;
+  condition: "theme-baseline" | "attention-horizon";
+  selectedThemeIds: readonly string[];
+  orderingVersion: number;
+  orderSeed: string;
   themeId?: string;
   themeLabel?: string;
   suiteVersion: typeof SUITE_VERSION;
@@ -153,7 +161,7 @@ export type Workflow = {
   renderedQuestionCount: number;
   questionCount: number;
   pageCount: number;
-  questionsPerNavigationPage: number;
+  questionCountsPerPage: readonly number[];
   orderedQuestionIds: readonly string[];
   pages: readonly WorkflowPage[];
 };

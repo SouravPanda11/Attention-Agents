@@ -6,7 +6,7 @@ export default function NotFoundPage() {
       <section className="completion-card">
         <p className="eyebrow">Workflow not found</p>
         <h1>Invalid benchmark configuration</h1>
-        <p>Choose a valid occurrence, layout and order from the workflow launcher.</p>
+        <p>Choose a valid survey sample and question order from the launcher.</p>
         <Link className="primary-button" href="/">
           Return to launcher
         </Link>

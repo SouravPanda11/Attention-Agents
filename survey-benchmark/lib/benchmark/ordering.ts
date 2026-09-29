@@ -1,4 +1,4 @@
-import type { OrderId, QuestionBank, SurveyQuestion } from "@/lib/benchmark/schema";
+import { ORDERING_VERSION, SUITE_VERSION, type OrderId, type QuestionBank, type SurveyQuestion } from "@/lib/benchmark/schema";
 import { validateQuestionBank } from "@/lib/benchmark/validation";
 
 export const ORDER_CONFIGS = [
@@ -37,42 +37,32 @@ export function seededShuffle<T>(values: readonly T[], seed: string): T[] {
   return shuffled;
 }
 
-export function getOrderSeed(orderId: OrderId): string {
+export function getOrderSeed(orderId: OrderId, sampleId = "baseline"): string {
   const config = ORDER_CONFIGS.find((candidate) => candidate.id === orderId);
   if (!config) throw new Error(`Unknown order id: ${orderId}`);
-  return config.seed;
+  return `${SUITE_VERSION}:ordering-${ORDERING_VERSION}:${sampleId}:${config.seed}`;
 }
 
-export function orderQuestions(bank: QuestionBank, orderId: OrderId): SurveyQuestion[] {
+export function orderQuestions(bank: QuestionBank, orderId: OrderId, sampleId = "baseline"): SurveyQuestion[] {
   validateQuestionBank(bank);
   const byId = new Map(bank.questions.map((question) => [question.id, question]));
   const emitted = new Set<string>();
   const result: SurveyQuestion[] = [];
-
-  for (let block = 1; block <= bank.occurrence; block += 1) {
-    const canonicalIds = bank.questions
-      .filter((question) => question.block === block)
-      .map((question) => question.id)
-      .sort();
-    const priority = new Map(
-      seededShuffle(canonicalIds, `${getOrderSeed(orderId)}:presentation:block-${block}`).map((id, index) => [id, index])
-    );
-    const remaining = new Set(canonicalIds);
-
-    while (remaining.size > 0) {
-      const eligible = [...remaining]
-        .filter((id) => (byId.get(id)?.dependsOn ?? []).every((dependency) => emitted.has(dependency)))
-        .sort((left, right) => (priority.get(left) ?? 0) - (priority.get(right) ?? 0));
-
-      if (eligible.length === 0) {
-        throw new Error(`Unable to resolve dependencies for ${bank.id} block ${block}.`);
-      }
-      const selected = eligible[0];
-      remaining.delete(selected);
-      emitted.add(selected);
-      result.push(byId.get(selected)!);
-    }
+  // Source themes do not define pages; shuffle the entire selected content pool.
+  const canonicalIds = bank.questions.map((question) => question.id).sort();
+  const priority = new Map(
+    seededShuffle(canonicalIds, `${getOrderSeed(orderId, sampleId)}:presentation`).map((id, index) => [id, index])
+  );
+  const remaining = new Set(canonicalIds);
+  while (remaining.size > 0) {
+    const eligible = [...remaining]
+      .filter((id) => (byId.get(id)?.dependsOn ?? []).every((dependency) => emitted.has(dependency)))
+      .sort((left, right) => priority.get(left)! - priority.get(right)!);
+    if (eligible.length === 0) throw new Error(`Unable to resolve dependencies for ${bank.id}.`);
+    const selected = eligible[0];
+    remaining.delete(selected);
+    emitted.add(selected);
+    result.push({ ...byId.get(selected)!, block: Math.floor(result.length / 11) + 1 });
   }
-
   return result;
 }

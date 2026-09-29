@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Survey Benchmark v0",
-  description: "Fixed survey workflows for evaluating web agents.",
+  title: "Survey Benchmark v1",
+  description: "Reproducible survey samples for evaluating web agents across increasing horizons.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

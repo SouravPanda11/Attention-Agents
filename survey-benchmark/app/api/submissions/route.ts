@@ -4,11 +4,13 @@ import { summarizeAttentionChecks } from "@/lib/benchmark/attentionChecks";
 import { buildWorkflow } from "@/lib/benchmark/buildWorkflow";
 import { buildThemeWorkflow } from "@/lib/benchmark/themeWorkflow";
 import { isThemeId } from "@/lib/benchmark/questions/themes/types";
+import { getSurveySample } from "@/lib/benchmark/sampling";
 import {
   isLayoutMode,
   isOccurrence,
   isOrderId,
   isPresentationProfile,
+  getSampleLayouts,
 } from "@/lib/benchmark/schema";
 import { getDatabase } from "@/lib/db";
 import { getOrCreateSessionId } from "@/lib/session";
@@ -18,6 +20,9 @@ export const runtime = "nodejs";
 type SubmissionBody = {
   runId?: unknown;
   workflowId?: unknown;
+  sampleId?: unknown;
+  orderingVersion?: unknown;
+  repeatIndex?: unknown;
   themeId?: unknown;
   profile?: unknown;
   occurrence?: unknown;
@@ -34,7 +39,7 @@ export async function POST(request: Request) {
   if (
     !body ||
     typeof body.runId !== "string" ||
-    body.runId.length > 128 ||
+    body.runId.length === 0 || body.runId.length > 128 ||
     typeof body.workflowId !== "string" ||
     typeof body.profile !== "string" ||
     typeof body.occurrence !== "number" ||
@@ -49,7 +54,9 @@ export async function POST(request: Request) {
     !isPresentationProfile(body.profile) ||
     !isOccurrence(body.occurrence) ||
     !isLayoutMode(body.layout) ||
-    !isOrderId(body.orderId)
+    !isOrderId(body.orderId) ||
+    (body.repeatIndex !== undefined && (typeof body.repeatIndex !== "number" ||
+      !Number.isSafeInteger(body.repeatIndex) || body.repeatIndex < 1))
   ) {
     return NextResponse.json({ ok: false, error: "invalid_submission" }, { status: 400 });
   }
@@ -57,12 +64,18 @@ export async function POST(request: Request) {
   if (body.themeId !== undefined && (!isThemeId(body.themeId) || body.occurrence !== 1 || body.layout !== "item")) {
     return NextResponse.json({ ok: false, error: "invalid_theme_workflow" }, { status: 400 });
   }
+  const sample = typeof body.sampleId === "string" ? getSurveySample(body.sampleId) : undefined;
+  if (!isThemeId(body.themeId) && (!sample || sample.occurrence !== body.occurrence || !getSampleLayouts(sample.occurrence).includes(body.layout))) {
+    return NextResponse.json({ ok: false, error: "invalid_sample" }, { status: 400 });
+  }
   const workflow = isThemeId(body.themeId)
     ? buildThemeWorkflow(body.themeId, body.orderId)
-    : buildWorkflow(body.profile, body.occurrence, body.layout, body.orderId);
+    : buildWorkflow(sample!.id, body.orderId, body.layout);
   const submittedIds = body.orderedQuestionIds.map(String);
   if (
     body.workflowId !== workflow.id ||
+    (body.sampleId !== undefined && body.sampleId !== workflow.sampleId) ||
+    (body.orderingVersion !== undefined && body.orderingVersion !== workflow.orderingVersion) ||
     body.contentVersion !== workflow.contentVersion ||
     body.attentionCheckContentVersion !== workflow.attentionCheckContentVersion ||
     submittedIds.join("|") !== workflow.orderedQuestionIds.join("|")
@@ -80,7 +93,10 @@ export async function POST(request: Request) {
   const summary = summarizeAnswers(questions, answers);
   const attentionSummary = workflow.themeId
     ? { checkCount: 0, scoredCount: 0, unscoredCount: 0, attemptedCount: 0, passCount: 0, failCount: 0, skippedCount: 0, results: [] }
-    : summarizeAttentionChecks(workflow.occurrence, workflow.orderId, answers);
+    : summarizeAttentionChecks(sample!, workflow.orderId, answers);
+
+  const substantiveQuestions = questions.filter((question) => question.id.startsWith("main-"));
+  const substantiveSummary = summarizeAnswers(substantiveQuestions, answers);
 
   const sessionId = await getOrCreateSessionId();
   const database = getDatabase();
@@ -92,8 +108,9 @@ export async function POST(request: Request) {
         valid_answer_count, invalid_answer_count, skipped_question_count,
         attention_check_count, attention_check_scored_count, attention_check_unscored_count,
         attention_check_attempted_count, attention_check_pass_count,
-        attention_check_fail_count, attention_check_skipped_count, attention_check_results, theme_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        attention_check_fail_count, attention_check_skipped_count, attention_check_results, theme_id,
+        sample_id, selected_theme_ids, ordering_version, order_seed, repeat_index
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(run_id, workflow_id) DO UPDATE SET
         ts = excluded.ts,
         content_version = excluded.content_version,
@@ -112,7 +129,12 @@ export async function POST(request: Request) {
         attention_check_fail_count = excluded.attention_check_fail_count,
         attention_check_skipped_count = excluded.attention_check_skipped_count,
         attention_check_results = excluded.attention_check_results,
-        theme_id = excluded.theme_id`
+        theme_id = excluded.theme_id,
+        sample_id = excluded.sample_id,
+        selected_theme_ids = excluded.selected_theme_ids,
+        ordering_version = excluded.ordering_version,
+        order_seed = excluded.order_seed,
+        repeat_index = excluded.repeat_index`
     )
     .run(
       new Date().toISOString(),
@@ -140,7 +162,12 @@ export async function POST(request: Request) {
       attentionSummary.failCount,
       attentionSummary.skippedCount,
       JSON.stringify(attentionSummary.results),
-      workflow.themeId ?? null
+      workflow.themeId ?? null,
+      workflow.sampleId,
+      JSON.stringify(workflow.selectedThemeIds),
+      workflow.orderingVersion,
+      workflow.orderSeed,
+      body.repeatIndex ?? null
     );
 
   database
@@ -156,6 +183,9 @@ export async function POST(request: Request) {
       "workflow_submitted",
       workflow.pageCount - 1,
       JSON.stringify({
+        sampleId: workflow.sampleId,
+        selectedThemeIds: workflow.selectedThemeIds,
+        substantiveSummary,
         attemptedCount: summary.attemptedCount,
         validCount: summary.validCount,
         invalidCount: summary.invalidCount,
@@ -180,6 +210,8 @@ export async function POST(request: Request) {
     invalidCount: summary.invalidCount,
     skippedCount: summary.skippedCount,
     themeId: workflow.themeId ?? null,
+    sampleId: workflow.sampleId,
+    substantiveSummary,
     attentionCheckCount: workflow.attentionCheckCount,
     questionResults: questions.map((question) => ({
       questionId: question.id,

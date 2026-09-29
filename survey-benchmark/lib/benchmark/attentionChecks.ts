@@ -1,11 +1,12 @@
 import "server-only";
+import { createHash } from "node:crypto";
+import type { SurveySample } from "@/lib/benchmark/sampling";
+import { getOrderSeed, seededShuffle } from "@/lib/benchmark/ordering";
 
 import { isAnswerAttempted } from "@/lib/benchmark/answers";
 import { q } from "@/lib/benchmark/questionFactories";
 import {
-  ORDER_IDS,
   type AnswerValue,
-  type Occurrence,
   type OrderId,
   type QuestionKind,
   type SurveyQuestion,
@@ -169,91 +170,12 @@ export const ATTENTION_CHECK_BANK = [
   FIXED_PENULTIMATE_ATTENTION_CHECK,
 ] as const satisfies readonly AttentionCheckDefinition[];
 
-type RotatingPrivateId = (typeof ROTATING_ATTENTION_CHECK_BANK)[number]["privateId"];
-
-/*
- * Each form supplies the 15 rotating slots needed at o8:
- *   2 slots x 7 non-final blocks + 1 slot in the final block.
- *
- * The first eight entries of every form are a permutation of all eight rotating
- * checks. The remaining seven begin a second, differently paired pass. Thus all
- * checks receive coverage without evaluating every possible AC pairing.
- */
-export const ROTATING_ATTENTION_CHECK_SCHEDULES = {
-  order01: [
-    "ac-direct-instruction",
-    "ac-dropdown-instruction",
-    "ac-ranking-instruction",
-    "ac-short-text-entry",
-    "ac-image-single-select",
-    "ac-bogus-infrequency",
-    "ac-text-captcha",
-    "ac-image-captcha",
-    "ac-ranking-instruction",
-    "ac-image-single-select",
-    "ac-direct-instruction",
-    "ac-text-captcha",
-    "ac-dropdown-instruction",
-    "ac-image-captcha",
-    "ac-bogus-infrequency",
-  ],
-  order02: [
-    "ac-short-text-entry",
-    "ac-bogus-infrequency",
-    "ac-direct-instruction",
-    "ac-image-captcha",
-    "ac-ranking-instruction",
-    "ac-text-captcha",
-    "ac-dropdown-instruction",
-    "ac-image-single-select",
-    "ac-text-captcha",
-    "ac-dropdown-instruction",
-    "ac-short-text-entry",
-    "ac-image-single-select",
-    "ac-bogus-infrequency",
-    "ac-ranking-instruction",
-    "ac-direct-instruction",
-  ],
-  order03: [
-    "ac-image-captcha",
-    "ac-ranking-instruction",
-    "ac-text-captcha",
-    "ac-dropdown-instruction",
-    "ac-bogus-infrequency",
-    "ac-direct-instruction",
-    "ac-image-single-select",
-    "ac-short-text-entry",
-    "ac-direct-instruction",
-    "ac-bogus-infrequency",
-    "ac-image-captcha",
-    "ac-short-text-entry",
-    "ac-ranking-instruction",
-    "ac-image-single-select",
-    "ac-text-captcha",
-  ],
-} as const satisfies Record<OrderId, readonly RotatingPrivateId[]>;
-
 const byPrivateId = new Map<string, AttentionCheckDefinition>(
   ATTENTION_CHECK_BANK.map((definition) => [definition.privateId, definition] as const)
 );
 
-function opaqueHash(value: string): string {
-  let hash = 2166136261;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0).toString(36).padStart(7, "0");
-}
-
-function publicQuestionId(
-  privateId: string,
-  occurrence: Occurrence,
-  orderId: OrderId,
-  block: number,
-  slotInBlock: number
-): string {
-  return `q-${opaqueHash(`${privateId}:o${occurrence}:${orderId}:b${block}:s${slotInBlock}`)}`;
+function publicQuestionId(sampleId: string, privateId: string, copy: number): string {
+  return `q-${createHash("sha256").update(`${sampleId}:${privateId}:${copy}`).digest("hex").slice(0, 24)}`;
 }
 
 function answerMatches(definition: AttentionCheckDefinition, actual: unknown): boolean | null {
@@ -291,8 +213,9 @@ export type AttentionCheckInstance = {
   privateId: string;
   role: AttentionCheckRole;
   mechanism: AttentionCheckMechanism;
-  /** 1 or 2 within the logical block, independent of rendered position. */
-  slotInBlock: 1 | 2;
+  /** Stable copy identity, even when repeated checks move between pages. */
+  copy: number;
+  slotInBlock: 1 | 2 | 3;
   placement: "seeded" | "fixed-penultimate";
   question: SurveyQuestion;
   expectedAnswer: ExpectedAnswer | null;
@@ -300,84 +223,56 @@ export type AttentionCheckInstance = {
 };
 
 function instantiate(
-  definition: AttentionCheckDefinition,
-  occurrence: Occurrence,
-  orderId: OrderId,
-  block: number,
-  slotInBlock: 1 | 2,
-  placement: AttentionCheckInstance["placement"]
+  sampleId: string, privateId: string, copy: number, block: number, slotInBlock: 1 | 2 | 3
 ): AttentionCheckInstance {
+  const definition = byPrivateId.get(privateId);
+  if (!definition) throw new Error(`[attention checks] Unknown check ${privateId}.`);
   return {
-    privateId: definition.privateId,
+    privateId, copy, slotInBlock,
     role: definition.role,
     mechanism: definition.mechanism,
-    slotInBlock,
-    placement,
-    question: {
-      ...definition.question,
-      id: publicQuestionId(definition.privateId, occurrence, orderId, block, slotInBlock),
-      block,
-    } as SurveyQuestion,
+    placement: definition.role === "rotating" ? "seeded" : "fixed-penultimate",
+    question: { ...definition.question, id: publicQuestionId(sampleId, privateId, copy), block } as SurveyQuestion,
     expectedAnswer: definition.expectedAnswer,
     matcher: definition.matcher,
   };
 }
 
-/**
- * Returns exactly two AC instances per block.
- *
- * Non-final blocks receive two rotating checks. The final block receives one
- * rotating check and the fixed delayed-recall placeholder. Consumers must render
- * the fixed instance as the penultimate question of the final page/block.
- */
-export function getAttentionCheckInstances(
-  occurrence: Occurrence,
-  orderId: OrderId
-): readonly AttentionCheckInstance[] {
-  const rotatingCount = occurrence * 2 - 1;
-  const rotatingIds = ROTATING_ATTENTION_CHECK_SCHEDULES[orderId].slice(0, rotatingCount);
-  let rotatingIndex = 0;
-  const instances: AttentionCheckInstance[] = [];
-
-  for (let block = 1; block <= occurrence; block += 1) {
-    const isFinalBlock = block === occurrence;
-    const rotatingSlots = isFinalBlock ? 1 : 2;
-
-    for (let slot = 1; slot <= rotatingSlots; slot += 1) {
-      const privateId = rotatingIds[rotatingIndex];
-      rotatingIndex += 1;
-      const definition = byPrivateId.get(privateId);
-      if (!definition || definition.role !== "rotating") {
-        throw new Error(`[attention checks] Missing rotating definition ${privateId}.`);
-      }
-      instances.push(
-        instantiate(definition, occurrence, orderId, block, slot as 1 | 2, "seeded")
-      );
-    }
-
-    if (isFinalBlock) {
-      instances.push(
-        instantiate(
-          FIXED_PENULTIMATE_ATTENTION_CHECK,
-          occurrence,
-          orderId,
-          block,
-          2,
-          "fixed-penultimate"
-        )
-      );
-    }
+/** Two ordinary checks on EVERY page, plus one extra fixed check on the final page. */
+export function getAttentionCheckInstances(sample: SurveySample, orderId: OrderId): readonly AttentionCheckInstance[] {
+  const seen = new Map<string, number>();
+  const tokens = sample.rotatingAttentionCheckIds.map((privateId) => {
+    const copy = (seen.get(privateId) ?? 0) + 1;
+    seen.set(privateId, copy);
+    return { privateId, copy };
+  });
+  const seed = getOrderSeed(orderId, sample.id);
+  let allocated = seededShuffle(tokens, `${seed}:attention-allocation:0`);
+  const hasDuplicatePair = () => allocated.some((token, index) =>
+    index % 2 === 0 && token.privateId === allocated[index + 1]?.privateId);
+  // Rejection sampling preserves random allocation while avoiding identical ACs on a page.
+  for (let attempt = 1; hasDuplicatePair() && attempt <= 128; attempt++) {
+    allocated = seededShuffle(tokens, `${seed}:attention-allocation:${attempt}`);
   }
-
+  if (hasDuplicatePair()) {
+    // Guaranteed fallback for this bank (each identity occurs at most twice).
+    const sorted = [...tokens].sort((a, b) => (a.privateId < b.privateId ? -1 : a.privateId > b.privateId ? 1 : 0));
+    allocated = seededShuffle(Array.from({ length: sample.occurrence }, (_, index) =>
+      [sorted[index], sorted[index + sample.occurrence]]), `${seed}:attention-fallback`).flat();
+  }
+  const instances = allocated.map((token, index) => instantiate(
+    sample.id, token.privateId, token.copy, Math.floor(index / 2) + 1, index % 2 === 0 ? 1 : 2
+  ));
+  instances.push(instantiate(sample.id, FIXED_PENULTIMATE_ATTENTION_CHECK.privateId, 1, sample.occurrence, 3));
   return instances;
 }
 
 export function summarizeAttentionChecks(
-  occurrence: Occurrence,
+  sample: SurveySample,
   orderId: OrderId,
   answers: Readonly<Record<string, unknown>>
 ) {
-  const instances = getAttentionCheckInstances(occurrence, orderId);
+  const instances = getAttentionCheckInstances(sample, orderId);
   const results = instances.map((instance) => {
     const actual = answers[instance.question.id];
     const attempted = isAnswerAttempted(actual);
@@ -385,6 +280,7 @@ export function summarizeAttentionChecks(
     if (!definition) throw new Error(`[attention checks] Missing definition ${instance.privateId}.`);
     return {
       privateId: instance.privateId,
+      copy: instance.copy,
       publicQuestionId: instance.question.id,
       role: instance.role,
       mechanism: instance.mechanism,
@@ -435,25 +331,4 @@ if (
   (FIXED_PENULTIMATE_ATTENTION_CHECK.matcher === null)
 ) {
   throw new Error("[attention checks] Configure both the delayed-recall answer and matcher, or neither.");
-}
-
-for (const orderId of ORDER_IDS) {
-  const ids = ROTATING_ATTENTION_CHECK_SCHEDULES[orderId];
-  if (ids.length !== 15) {
-    throw new Error(`[attention checks] ${orderId} must define 15 rotating slots for o8.`);
-  }
-  if (new Set(ids.slice(0, 8)).size !== 8) {
-    throw new Error(`[attention checks] The first eight ${orderId} slots must cover all rotating checks.`);
-  }
-  for (const privateId of ids) {
-    const definition = byPrivateId.get(privateId);
-    if (!definition || definition.role !== "rotating") {
-      throw new Error(`[attention checks] ${orderId} references invalid rotating check ${privateId}.`);
-    }
-  }
-  for (let index = 0; index < 14; index += 2) {
-    if (ids[index] === ids[index + 1]) {
-      throw new Error(`[attention checks] ${orderId} repeats a check within rotating pair ${index / 2 + 1}.`);
-    }
-  }
 }

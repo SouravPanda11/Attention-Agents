@@ -186,6 +186,8 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
       await postJson("/api/submissions", {
         runId,
         workflowId: workflow.id,
+        sampleId: workflow.sampleId,
+        orderingVersion: workflow.orderingVersion,
         profile: workflow.profile,
         themeId: workflow.themeId,
         occurrence: workflow.occurrence,
@@ -269,11 +271,10 @@ export function SurveyRunner({ workflow }: { workflow: Workflow }) {
 
       <section className="instruction-card">
         <h2>Instructions</h2>
-        <p>Questions may be left unanswered. Use Previous or Next to move between pages and revise responses.</p>
-        {workflow.themeId ? <p>{workflow.renderedQuestionCount} questions on one page.</p> : <p>
-          This is the <strong>{workflow.layout === "item" ? "item-heavy" : "navigation-heavy"}</strong>{" "}
-          layout with {workflow.renderedQuestionCount} displayed items.
-        </p>}
+        <p>Questions may be left unanswered. {workflow.pageCount > 1
+          ? "Use Previous or Next to move between pages and revise responses."
+          : "Use Submit survey when you are finished."}</p>
+        <p>{workflow.renderedQuestionCount} questions across {workflow.pageCount} question page{workflow.pageCount === 1 ? "" : "s"}.</p>
       </section>
 
       <div className="question-list">

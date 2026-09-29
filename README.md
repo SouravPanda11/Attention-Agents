@@ -7,9 +7,29 @@ analyzing run quality from recorded artifacts.
 
 - `survey-site/`: Next.js 16 + React 19 survey app with SQLite logging (`data.sqlite`).
 - `Agent/`: Playwright + LangGraph agent, batch runners, comparison scripts, plotting, and ingestion.
-- `survey-benchmark/`: Standalone fixed-form workflow benchmark on port 3001.
+- `survey-benchmark/`: Survey sampling and long-horizon benchmark on port 3001 (7,575 AC samples plus 8 baselines, three orders each).
 - [`Agentic/`](Agentic/README.md): Independent LM Studio browser runner and evaluations for the benchmark's o1 order variants.
 - `evaluation/answer_key.json`: Offline answer keys for `survey_v0` and `survey_v1`.
+
+## Survey benchmark (v1)
+
+The finalized design and sampling table are documented in [survey-benchmark/README.md](survey-benchmark/README.md).
+O = 1-8 selects whole themes and balanced AC multisets, then creates three reproducible mixed-theme layouts per sample.
+Navigation-heavy pages contain 11 normal questions and 2 ordinary ACs; the final page adds one fixed penultimate AC.
+At O = 2-8, each sample/order also has an item-heavy variant containing the identical sequence on one page.
+Including the eight no-AC baselines, there are **7,583 content samples**, **44,802 layout/order variants**, and **134,406 planned executions per model** at three repeats per order.
+
+```powershell
+cd survey-benchmark
+npm install
+npm run dev
+# In another terminal in survey-benchmark:
+npm run export:plan -- --output run-plan.jsonl
+```
+
+The launcher is at `http://localhost:3001`; `/api/manifest` exposes paginated AC layouts and all baseline layouts.
+The existing Agentic runner remains a theme-only baseline runner; configure `SURVEY_VERSION=v1` for this benchmark release.
+O = 1 keeps one layout; O = 2-8 compares matched navigation-heavy and item-heavy layouts. Existing study records remain in place.
 
 ## Prerequisites
 
