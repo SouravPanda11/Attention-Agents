@@ -292,9 +292,10 @@ def parser():
     return cli
 
 
-def main():
+def main(argv=None):
     try:
-        args = parser().parse_args()
+        arguments = list(sys.argv[1:] if argv is None else argv)
+        args = parser().parse_args(arguments or ["run"])
         if args.command == "run":
             if args.observation not in {"dom", "vision"} or args.behavior not in {"completion", "unconstrained"}:
                 raise ValueError("Invalid observation or behavior in Agentic/.env")

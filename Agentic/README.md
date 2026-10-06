@@ -3,6 +3,7 @@
 An independent LM Studio + Playwright runner for `survey-benchmark`. By default,
 `agent.py run` executes the AC suite in `survey-benchmark/run-v1.jsonl`, using
 the model selected in `Agentic/.env`. The original `Agent/` remains reserved for survey-site.
+Running `python agent.py` without a command also starts this default v1 run.
 
 ## Default v1 schedule
 

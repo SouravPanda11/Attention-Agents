@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from agent import parser, run_one
+from agent import main, parser, run_one
 from plan_runner import fetch_workflow, read_plan, run_plan_batch
 
 
@@ -33,6 +33,14 @@ def live_workflow(plan_row):
 
 
 class PlanTests(unittest.TestCase):
+    def test_no_command_starts_default_plan_run(self):
+        with patch("agent.run_batch", new_callable=AsyncMock, return_value=0) as batch:
+            self.assertEqual(main([]), 0)
+            args = batch.call_args.args[0]
+            self.assertEqual(args.command, "run")
+            self.assertFalse(args.theme_baselines)
+            self.assertEqual(args.plan.name, "run-v1.jsonl")
+
     def test_default_run_uses_plan_and_baselines_are_explicit(self):
         args = parser().parse_args(["run"])
         self.assertFalse(args.theme_baselines)
