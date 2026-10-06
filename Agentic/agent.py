@@ -1,4 +1,4 @@
-"""Independent o1 browser agent and sequential model/order experiment runner."""
+"""Browser agent for the ordered v1 run plan and optional theme baselines."""
 import argparse
 import asyncio
 from datetime import datetime, timezone
@@ -72,8 +72,11 @@ async def run_one(browser, args, workflow, repeat, batch_dir, run_index=1):
     run_dir = batch_dir / f"run-{run_index:03d}-{workflow['orderId']}-repeat-{repeat:03d}"
     run_dir.mkdir(parents=True)
     write_json(run_dir / "workflow.json", workflow)
-    summary = {"schema_version": 3, "condition": "theme-only",
-               "theme_id": workflow["themeId"], "theme_label": workflow["themeLabel"],
+    summary = {"schema_version": 3, "condition": "theme-only" if "themeId" in workflow else workflow["condition"],
+               "theme_id": workflow.get("themeId"), "theme_label": workflow.get("themeLabel"),
+               "sample_id": workflow.get("sampleId"), "occurrence": workflow["occurrence"],
+               "layout": workflow["layout"], "order_seed": workflow.get("orderSeed"),
+               "plan_id": workflow.get("planId"),
                "order_id": workflow["orderId"], "run_index": run_index, "model": args.model, "observation": args.observation,
                "model_name": args.model_name or args.model,
                "behavior": args.behavior, "temperature": 0,
@@ -106,20 +109,31 @@ async def run_one(browser, args, workflow, repeat, batch_dir, run_index=1):
         write_json(run_dir / "welcome.json", welcome)
         await execute(page, {"tool": "click", "key": "start-survey"})
         trace.append({"kind": "harness_navigation", "action": "start-survey"})
-        observation = await observe(page)
-        fields = [field for field in observation["fields"] if "kind" in field]
-        if [field["key"] for field in fields] != workflow["orderedQuestionIds"]:
-            raise RuntimeError("Rendered question sequence does not match frozen manifest")
-        instructions = welcome["instructions"] + observation["instructions"]
         history = []
-        for number, field in enumerate(fields, 1):
-            result = await run_question(page, args, workflow, field, number, run_dir,
-                                        summary, trace, history, instructions)
-            summary["question_results"].append(result)
-            history.append({"question_id": field["key"], "prompt": field["prompt"],
-                            "status": result["status"], "answer": result["answer"]})
-            write_json(run_dir / "run_summary.json", dict(summary, wall_seconds=time.perf_counter() - started,
-                       evaluation=evaluate_submission(None, workflow, args.db_path)))
+        page_ids = workflow.get("pageQuestionIds", [workflow["orderedQuestionIds"]])
+        if (len(page_ids) != workflow["pageCount"] or
+                [key for ids in page_ids for key in ids] != workflow["orderedQuestionIds"]):
+            raise RuntimeError("Manifest page boundaries do not match question sequence")
+        for page_index, expected_ids in enumerate(page_ids):
+            await page.locator(f'section.question-card[data-question-id={json.dumps(expected_ids[0])}]').wait_for()
+            observation = await observe(page)
+            current_fields = [field for field in observation["fields"] if "kind" in field]
+            if [field["key"] for field in current_fields] != expected_ids:
+                raise RuntimeError("Rendered question sequence does not match frozen manifest")
+            fields.extend(current_fields)
+            instructions = welcome["instructions"] + observation["instructions"]
+            for field in current_fields:
+                number = len(history) + 1
+                result = await run_question(page, args, workflow, field, number, run_dir,
+                                            summary, trace, history, instructions)
+                summary["question_results"].append(result)
+                history.append({"question_id": field["key"], "prompt": field["prompt"],
+                                "status": result["status"], "answer": result["answer"]})
+                write_json(run_dir / "run_summary.json", dict(summary, wall_seconds=time.perf_counter() - started,
+                           evaluation=evaluate_submission(None, workflow, args.db_path)))
+            if page_index < len(page_ids) - 1:
+                await execute(page, {"tool": "click", "key": "next-page"})
+                trace.append({"kind": "harness_navigation", "action": "next-page", "page_index": page_index})
         snapshot = await execute(page, {"tool": "click", "key": "submit-survey"})
         write_json(run_dir / "submission_snapshot.json", snapshot)
         trace.append({"kind": "harness_navigation", "action": "submit-survey", "status": snapshot["status"]})
@@ -158,6 +172,9 @@ async def run_one(browser, args, workflow, repeat, batch_dir, run_index=1):
 
 
 async def run_batch(args):
+    if not args.theme_baselines:
+        from plan_runner import run_plan_batch
+        return await run_plan_batch(args, run_one)
     if args.occurrence != "o1":
         raise ValueError("This runner currently supports SURVEY_OCCURRENCE=o1 only")
     if not args.orders or any(order not in {"order01", "order02", "order03"} for order in args.orders):
@@ -249,7 +266,12 @@ def parser():
     common.add_argument("--runs-dir", type=local_path, default=env("RUNS_DIR", "runs"))
     cli = argparse.ArgumentParser(description=__doc__)
     commands = cli.add_subparsers(dest="command", required=True)
-    run = commands.add_parser("run", parents=[common], help="Run theme-only o1 workflows")
+    run = commands.add_parser("run", parents=[common], help="Execute the ordered v1 plan (default) or theme baselines")
+    run.add_argument("--plan", type=local_path, default=local_path("../survey-benchmark/run-v1.jsonl"),
+                     help="JSONL execution plan; the default is generated with run-v1.cjs if missing")
+    run.add_argument("--theme-baselines", action="store_true", help="Run the original theme-only experiment")
+    run.add_argument("--limit", type=positive_int, help="Execute only this many plan rows")
+    run.add_argument("--start-index", type=positive_int, default=1, help="Start at this 1-based plan row")
     run.add_argument("--model", default=defaults["model"])
     run.add_argument("--model-name", default=defaults["model_name"], help="Optional output-folder label; defaults to model ID")
     run.add_argument("--suite-version", default=defaults["suite_version"])
@@ -258,7 +280,7 @@ def parser():
     run.add_argument("--orders", nargs="+", choices=["order01", "order02", "order03"],
                      default=defaults["orders"])
     run.add_argument("--themes", nargs="+", default=defaults["themes"], help="all or theme IDs in the desired sequence")
-    run.add_argument("--repeats", type=positive_int, default=defaults["repeats"], help="Repeats per order within each theme")
+    run.add_argument("--repeats", type=positive_int, default=defaults["repeats"], help="Theme-baseline repetitions; plan mode uses the file's repeat indices")
     run.add_argument("--observation", choices=["dom", "vision"], default=defaults["observation"])
     run.add_argument("--behavior", choices=["completion", "unconstrained"], default=env("BEHAVIOR", PROMPT_BEHAVIOR_MODE))
     run.add_argument("--temperature", type=float, default=defaults["temperature"], help="Fixed at 0")

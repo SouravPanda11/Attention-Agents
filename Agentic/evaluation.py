@@ -77,7 +77,7 @@ def format_attempts(fields, snapshot):
              "attempted": attempted(answers.get(field["key"]))} for field in fields if "kind" in field]
 
 
-PROTOCOL_KEYS = ("model", "lm_base_url", "observation", "behavior", "temperature", "execution_policy", "question_turn_limit",
+PROTOCOL_KEYS = ("model", "lm_base_url", "observation", "behavior", "temperature", "execution_policy", "question_turn_limit", "occurrence", "layout",
                  "prompt_version", "condition", "content_version", "attention_check_content_version")
 GROUP_KEYS = PROTOCOL_KEYS + ("theme_id", "order_id", "workflow_id")
 

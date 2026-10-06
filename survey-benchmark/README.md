@@ -173,6 +173,25 @@ For a multi-seed experiment, the runner must set and record a distinct model see
 
 ### Export the implemented v1 run plan
 
+From the repository root, generate the AC-only v1 run file in occurrence order:
+
+```powershell
+node survey-benchmark/run-v1.cjs
+# One execution per sample/layout/order instead of three:
+node survey-benchmark/run-v1.cjs --repeats 1 --output survey-benchmark/run-v1-once.jsonl
+```
+
+The file defaults to `survey-benchmark/run-v1.jsonl`. It finishes all O = 1
+samples, then all O = 2 navigation-heavy samples, then all O = 2 item-heavy
+samples, and repeats that pattern through O = 8. Within each layout, sample
+IDs ascend and each sample completes `order01`, `order02`, `order03`, with
+the requested repetitions of each order. Theme-only baselines are excluded.
+The default includes 134,334 planned executions; `--repeats 1` includes 44,778.
+This script generates a JSONL run plan with URLs; it does not call an agent.
+To execute it, start this benchmark and the LM Studio server, then run
+`.venv\Scripts\python.exe agent.py run` from `Agentic`. The agent reads the
+default file automatically; `--plan PATH` selects a different plan.
+
 Export a JSONL execution plan without contacting a model or writing study records:
 
 ```powershell
@@ -186,7 +205,9 @@ The default is three repetitions per order. Both layouts are included by default
 
 Report results separately by occurrence level and layout, and compare matched sample/order pairs; pooled scores would overweight the levels with more samples. The fixed check remains an **unscored delayed-recall placeholder**, and the two CAPTCHA checks retain their existing placeholder stimuli. These content limitations are unchanged by the sampling implementation.
 
-The existing [Agentic runner](../Agentic/README.md) still targets only the theme-only baselines. Set its `SURVEY_VERSION=v1` when using this release; its independently configured repetition count is not changed by the benchmark's plan defaults. The exporter supplies a plan for extending a runner to the full AC suite.
+The [Agentic runner](../Agentic/README.md) executes the ordered AC plan by default.
+Set `SURVEY_VERSION=v1` when using this release. Plan repetition indices come
+from the file; `SURVEY_REPEATS` applies only to its optional `--theme-baselines` mode.
 
 ## Routes and discovery
 

@@ -20,9 +20,10 @@ export function* getRunPlan(options: { repeats?: number; occurrence?: Occurrence
   }
   for (const baseline of baselines) yield* expand(baseline);
   for (const occurrence of options.occurrence ? [options.occurrence] : OCCURRENCES) {
-    for (const sample of getSurveySamples(occurrence)) {
-      for (const layout of getSampleLayouts(occurrence)) {
-        if (options.layout && options.layout !== layout) continue;
+    // Complete every sample in a layout before moving to the next layout.
+    for (const layout of getSampleLayouts(occurrence)) {
+      if (options.layout && options.layout !== layout) continue;
+      for (const sample of getSurveySamples(occurrence)) {
         for (const orderId of ORDER_IDS) yield* expand(describeWorkflow(sample, orderId, layout));
       }
     }
