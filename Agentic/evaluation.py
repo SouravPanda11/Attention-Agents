@@ -1,6 +1,7 @@
 """Read authoritative scores only after a run; never pass these to the planner."""
 import csv
 import json
+import os
 import sqlite3
 from collections import defaultdict
 from contextlib import closing
@@ -9,7 +10,9 @@ from statistics import median, stdev
 
 
 def write_json(path, value):
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(value, indent=2, ensure_ascii=False, allow_nan=False) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
 
 
 def ratio(numerator, denominator):

@@ -172,6 +172,8 @@ async def run_one(browser, args, workflow, repeat, batch_dir, run_index=1):
 
 
 async def run_batch(args):
+    if args.theme_baselines and args.resume:
+        raise ValueError("--resume currently applies to v1 plan runs, not --theme-baselines")
     if not args.theme_baselines:
         from plan_runner import run_plan_batch
         return await run_plan_batch(args, run_one)
@@ -272,6 +274,7 @@ def parser():
     run.add_argument("--theme-baselines", action="store_true", help="Run the original theme-only experiment")
     run.add_argument("--limit", type=positive_int, help="Execute only this many plan rows")
     run.add_argument("--start-index", type=positive_int, default=1, help="Start at this 1-based plan row")
+    run.add_argument("--resume", action="store_true", help="Skip matching submitted plan runs found under --runs-dir")
     run.add_argument("--model", default=defaults["model"])
     run.add_argument("--model-name", default=defaults["model_name"], help="Optional output-folder label; defaults to model ID")
     run.add_argument("--suite-version", default=defaults["suite_version"])

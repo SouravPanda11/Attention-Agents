@@ -9,7 +9,9 @@ from unittest.mock import AsyncMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from agent import main, parser, run_one
-from plan_runner import fetch_workflow, read_plan, run_plan_batch
+from plan_runner import completed_plan_ids, fetch_workflow, is_completed, read_plan, run_plan_batch
+from brain import PROMPT_VERSION
+from questions import EXECUTION_POLICY, QUESTION_TURN_LIMIT
 
 
 def row(occurrence=2, layout="navigation", sample=1, order="order01", repeat=1):
@@ -33,6 +35,31 @@ def live_workflow(plan_row):
 
 
 class PlanTests(unittest.TestCase):
+    def test_resume_recovers_old_completed_runs_and_saved_submissions(self):
+        with tempfile.TemporaryDirectory() as temp:
+            args = SimpleNamespace(runs_dir=Path(temp), observation="dom", behavior="completion")
+            rows = [row(1, repeat=i) for i in range(1, 6)]
+            for i, planned in enumerate(rows):
+                directory = args.runs_dir / "model" / "v1-plans" / "old-batch" / f"run-{i}"
+                directory.mkdir(parents=True)
+                summary = {"model": "test", "observation": "dom", "behavior": "completion", "temperature": 0,
+                           "prompt_version": PROMPT_VERSION, "execution_policy": EXECUTION_POLICY,
+                           "question_turn_limit": QUESTION_TURN_LIMIT, "plan_id": planned["planId"],
+                           "workflow_id": planned["workflowId"], "evaluation": {"submitted": i == 0}}
+                if i == 3:
+                    summary["model"] = "different-model"
+                    summary["evaluation"]["submitted"] = True
+                (directory / "workflow.json").write_text(json.dumps(live_workflow(planned)), encoding="utf-8")
+                (directory / "run_summary.json").write_text(json.dumps(summary) if i != 4 else "{partial", encoding="utf-8")
+                if i == 1:
+                    (directory / "submission_snapshot.json").write_text(json.dumps({"status": 200,
+                        "response": {"accepted": True}, "request": {"workflowId": planned["workflowId"]}}), encoding="utf-8")
+            completed = completed_plan_ids(args, "test")
+            self.assertEqual([is_completed(r, completed) for r in rows], [True, True, False, False, False])
+            self.assertFalse(is_completed(dict(rows[0], orderSeed="different-seed"), completed))
+            args.behavior = "unconstrained"
+            self.assertFalse(completed_plan_ids(args, "test"))
+
     def test_no_command_starts_default_plan_run(self):
         with patch("agent.run_batch", new_callable=AsyncMock, return_value=0) as batch:
             self.assertEqual(main([]), 0)
@@ -133,6 +160,25 @@ class PageExecutionTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual([r["planId"] for r in saved], [r["planId"] for r in rows])
             self.assertNotEqual(invoked[2][3], invoked[3][3])
             browser.close.assert_awaited_once()
+
+            # Resume the same plan; skip submitted repetitions and retry the failed row.
+            completed = {(r["planId"], r["orderSeed"], r["questionCount"]) for i, r in enumerate(rows, 1) if i != 3}
+            args.resume = True
+            invoked.clear()
+            with patch("playwright.async_api.async_playwright", return_value=Manager()), \
+                    patch("plan_runner.request_json", side_effect=request), \
+                    patch("plan_runner.fetch_workflow", side_effect=lambda args, row: live_workflow(row)), \
+                    patch("plan_runner.completed_plan_ids", return_value=completed), \
+                    patch("plan_runner.report"), patch("builtins.print"):
+                self.assertEqual(await run_plan_batch(args, execute), 1)
+            self.assertEqual([call[2] for call in invoked], [3])
+            self.assertEqual(len(list(args.runs_dir.rglob("experiment.json"))), 2)
+
+            completed.add((rows[2]["planId"], rows[2]["orderSeed"], rows[2]["questionCount"]))
+            with patch("plan_runner.completed_plan_ids", return_value=completed), \
+                    patch("plan_runner.request_json") as network, patch("builtins.print"):
+                self.assertEqual(await run_plan_batch(args, execute), 0)
+                network.assert_not_called()
 
     async def test_navigation_and_item_answer_all_questions_then_submit(self):
         for layout in ("navigation", "item"):

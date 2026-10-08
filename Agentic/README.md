@@ -38,6 +38,31 @@ The batch stores the selected schedule and settings. Sample reports refresh afte
 each execution; batch reports refresh when the batch finishes or is interrupted.
 Comparison groups separate occurrence levels and layouts.
 
+## Resume after a shutdown
+
+Keep the existing `Agentic/runs` folder, restart the benchmark and LM Studio,
+select the same model/settings, and use the same plan with `--resume`:
+
+```cmd
+python agent.py run --plan ../survey-benchmark/run-v1-once.jsonl --resume --dry-run
+python agent.py run --plan ../survey-benchmark/run-v1-once.jsonl --resume
+```
+
+For the default three-repetition plan, use `python agent.py run --resume`.
+Resume works with runs saved before this feature was added. It skips submitted
+sample/layout/order/repetition combinations with matching model, prompt, behavior,
+observation, question budget, order seed and question count. Failed, interrupted,
+or incomplete surveys start again from their welcome screen in a fresh browser;
+resume does not restore a question halfway through a survey. An accepted saved
+submission response also proves completion if shutdown preceded the final summary.
+
+Each resumed invocation creates a new batch and preserves old artifacts.
+`--start-index` and `--limit` restrict the plan rows considered for resumption.
+To continue on another machine, copy the plan and the entire `Agentic/runs`
+folder there, or point `--runs-dir` to its copied location. Use the same model ID
+and model settings. Changing machine paths or server URLs does not invalidate
+completion. Without `--resume`, the runner starts a fresh experiment as before.
+
 ## Optional theme-only schedule (`--theme-baselines`)
 
 Themes run in this order: consumer, digital, wellbeing, education, work, finance,

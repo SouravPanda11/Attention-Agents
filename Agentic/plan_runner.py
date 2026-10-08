@@ -13,6 +13,42 @@ import uuid
 from brain import normalize_endpoint, request_json
 from config import local_path
 from evaluation import report, write_json
+from brain import PROMPT_VERSION
+from questions import EXECUTION_POLICY, QUESTION_TURN_LIMIT
+
+
+def completed_plan_ids(args, model):
+    """Recover completion from existing artifacts, including pre-resume batches."""
+    completed = set()
+    for path in args.runs_dir.glob("*/v1-plans/*/**/run_summary.json"):
+        try:
+            summary = json.loads(path.read_text(encoding="utf-8"))
+            expected = {"model": model, "observation": args.observation, "behavior": args.behavior,
+                        "temperature": 0, "prompt_version": PROMPT_VERSION,
+                        "execution_policy": EXECUTION_POLICY, "question_turn_limit": QUESTION_TURN_LIMIT}
+            if any(summary.get(key) != value for key, value in expected.items()):
+                continue
+            workflow = json.loads(path.with_name("workflow.json").read_text(encoding="utf-8"))
+            plan_id = summary.get("plan_id")
+            if not plan_id or workflow.get("planId") != plan_id or workflow.get("id") != summary.get("workflow_id"):
+                continue
+            accepted = summary.get("evaluation", {}).get("submitted") is True
+            # Power loss can occur after saving the accepted response but before the final summary.
+            snapshot_path = path.with_name("submission_snapshot.json")
+            if not accepted and snapshot_path.is_file():
+                snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+                accepted = (snapshot.get("status") == 200 and snapshot.get("response", {}).get("accepted") is True
+                            and snapshot.get("request", {}).get("workflowId") == workflow["id"])
+            if accepted:
+                completed.add((plan_id, workflow.get("orderSeed"), workflow.get("questionCount")))
+        except (OSError, ValueError, TypeError, AttributeError, KeyError):
+            # An incomplete/corrupt artifact is not proof of completion; retry that survey.
+            continue
+    return completed
+
+
+def is_completed(row, completed):
+    return (row["planId"], row["orderSeed"], row["questionCount"]) in completed
 
 
 def ensure_plan(path):
@@ -112,13 +148,21 @@ async def run_plan_batch(args, run_one):
     count = sum(groups.values())
     if not count:
         raise ValueError(f"No plan rows selected (plan contains {total} rows)")
+    models = list(dict.fromkeys(args.models or [args.model]))
+    completed = {model: completed_plan_ids(args, model) if getattr(args, "resume", False) else set() for model in models}
+    remaining = {model: sum(not is_completed(row, completed[model]) for _, row in selected_rows(args)) for model in models}
     if args.dry_run:
         print(json.dumps({"plan": str(args.plan), "total_plan_rows": total, "runs_per_model": count,
                           "start_index": args.start_index, "models": args.models or [args.model],
                           "groups_in_execution_order": dict(groups),
-                          "first_run": next(selected_rows(args))[1]}, indent=2))
+                          "first_run": next(selected_rows(args))[1],
+                          "resume": getattr(args, "resume", False), "remaining_runs_per_model": remaining,
+                          "next_run_per_model": {model: next((row for _, row in selected_rows(args)
+                                                   if not is_completed(row, completed[model])), None) for model in models}}, indent=2))
         return 0
-    models = list(dict.fromkeys(args.models or [args.model]))
+    if not any(remaining.values()):
+        print("All selected plan runs are already submitted; nothing to resume.", flush=True)
+        return 0
     if not all(models):
         raise ValueError("Set LLM_MODEL (or VLM_MODEL), or pass --model")
     if args.model_name and len(models) > 1:
@@ -140,19 +184,25 @@ async def run_plan_batch(args, run_one):
             browser = await playwright.chromium.launch(headless=not args.headed)
             try:
                 for model in models:
+                    if not remaining[model]:
+                        continue
                     args.model = model
+                    print(f"{model}: {count - remaining[model]:,} completed runs skipped; {remaining[model]:,} remaining", flush=True)
                     name = re.sub(r"[^A-Za-z0-9._-]+", "_", args.model_name or model).strip("._-")[:100] or "model"
                     model_dir = args.runs_dir / name / "v1-plans" / batch_id
                     model_dir.mkdir(parents=True)
                     write_json(model_dir / "experiment.json", {"model": model, "plan": str(args.plan),
                                "start_index": args.start_index, "limit": args.limit, "planned_runs": count,
-                               "groups_in_execution_order": dict(groups), "suite_version": "v1"})
+                               "groups_in_execution_order": dict(groups), "suite_version": "v1",
+                               "resume": getattr(args, "resume", False), "remaining_runs": remaining[model]})
                     write_json(model_dir / "manifest.json", manifest)
                     cached = None
                     with (model_dir / "schedule.jsonl").open("w", encoding="utf-8") as schedule_file:
                         for index, row in selected_rows(args):
                             schedule_file.write(json.dumps(dict(row, plan_row_index=index)) + "\n")
                     for index, row in selected_rows(args):
+                        if is_completed(row, completed[model]):
+                            continue
                         if cached is None or cached["id"] != row["workflowId"]:
                             cached = await fetch_workflow(args, row)
                         workflow = dict(cached, planId=row["planId"])
